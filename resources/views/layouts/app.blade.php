@@ -143,103 +143,73 @@
     <div id="wrapper">
         @unless($isLoginPage)
         <nav id="sidebar">
-            <div class="sidebar-header">
-                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-layer-group me-2 text-info"></i>PBRI MIS</h5>
-            </div>
-            <ul class="list-unstyled components mt-3">
-                <li class="{{ Request::is('/') ? 'active' : '' }}">
-                    <a href="{{ url('/') }}"><i class="fa-solid fa-chart-pie me-2"></i> แดชบอร์ด</a>
+    <div class="sidebar-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-layer-group me-2 text-info"></i>PBRI MIS</h5>
+    </div>
+    <ul class="list-unstyled components mt-3">
+        <li class="{{ Request::is('/') ? 'active' : '' }}">
+            <a href="{{ url('/') }}"><i class="fa-solid fa-chart-pie me-2"></i> แดชบอร์ด</a>
+        </li>
+        
+        <!-- HR Menu -->
+        <li>
+            <a href="#hrMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('hr*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('hr*') ? '' : 'collapsed' }}">
+                <i class="fa-solid fa-users me-2 text-warning"></i> งานบุคลากร (HR)
+            </a>
+            <ul class="collapse list-unstyled submenu-list {{ Request::is('hr*') ? 'show' : '' }}" id="hrMenu">
+                <li class="{{ Request::is('hr/departments*') ? 'active' : '' }}">
+                    <a href="{{ url('hr/departments') }}"><i class="fa-solid fa-sitemap me-2"></i> โครงสร้างหน่วยงาน</a>
                 </li>
-                <li>
-                    <a href="#hrMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('hr*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('hr*') ? '' : 'collapsed' }}">
-                        <i class="fa-solid fa-users me-2 text-warning"></i> งานบุคลากร (HR)
-                    </a>
-                    <ul class="collapse list-unstyled submenu-list {{ Request::is('hr*') ? 'show' : '' }}" id="hrMenu">
-                        <li class="{{ Request::is('hr/departments*') ? 'active' : '' }}">
-                            <a href="{{ url('hr/departments') }}"><i class="fa-solid fa-sitemap me-2"></i> โครงสร้างหน่วยงาน</a>
-                        </li>
-                        <li class="{{ Request::is('hr/personnels*') ? 'active' : '' }}">
-                            <a href="{{ url('hr/personnels') }}"><i class="fa-solid fa-user-tie me-2"></i> ข้อมูลบุคลากร</a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#projectPlanMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('config*', 'plan*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('config*', 'plan*') ? '' : 'collapsed' }}">
-                        <i class="fa-solid fa-folder-open me-2"></i> แผนโครงการ
-                    </a>
-                    <ul class="collapse list-unstyled submenu-list {{ Request::is('config*', 'plan/*') ? 'show' : '' }}" id="projectPlanMenu">
-    <li>
-        @php
-            // สร้างตัวแปรเก็บรวมทุก Path ของเมนูย่อย เพื่อให้เขียนโค้ดง่ายขึ้น
-            $isBaseConfigActive = Request::is('config/fiscal-years*', 'plan/missions*', 'plan/strategic-issues*', 'plan/goals*', 'plan/strategies*', 'plan/budget-sources*', 'plan/programs*', 'plan/budget-categories*');
-        @endphp
-
-        <a href="#baseConfigMenu" data-bs-toggle="collapse" 
-           aria-expanded="{{ $isBaseConfigActive ? 'true' : 'false' }}" 
-           class="dropdown-toggle ps-4 bg-dark text-warning {{ $isBaseConfigActive ? '' : 'collapsed' }}">
-            <i class="fa-solid fa-gears me-2"></i> ข้อมูลพื้นฐานยุทธศาสตร์
-        </a>
-
-        <ul class="collapse list-unstyled {{ $isBaseConfigActive ? 'show' : '' }}" id="baseConfigMenu" style="background-color: #0b0f17;">
-            <li class="{{ Request::is('config/fiscal-years*') ? 'active' : '' }}">
-                <a href="{{ url('config/fiscal-years') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-calendar-check me-2 text-warning"></i> จัดการปีงบประมาณ
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/missions*') ? 'active' : '' }}">
-                <a href="{{ url('plan/missions') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-compass me-2"></i> ชั้นที่ 1: พันธกิจ
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/strategic-issues*') ? 'active' : '' }}">
-                <a href="{{ url('plan/strategic-issues') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-bullseye me-2"></i> ชั้นที่ 2: ประเด็นยุทธศาสตร์
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/goals*') ? 'active' : '' }}">
-                <a href="{{ url('plan/goals') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-crosshairs me-2"></i> ชั้นที่ 3: เป้าประสงค์
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/strategies*') ? 'active' : '' }}">
-                <a href="{{ url('plan/strategies') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-chess-knight me-2"></i> ชั้นที่ 4: กลยุทธ์องค์กร
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}">
-                <a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-wallet me-2 text-success"></i> แหล่งเงินงบประมาณ
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}">
-                <a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-layer-group me-2 text-info"></i> แผนงาน (แหล่งเงิน L1)
-                </a>
-            </li>
-            <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}">
-                <a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50">
-                    <i class="fa-solid fa-tags me-2 text-danger"></i> หมวดงบรายจ่าย (L2)
-                </a>
-            </li>
-        </ul>
-    </li>
-    
-            <li class="{{ Request::is('plan/projects*') ? 'active' : '' }}">
-                <a href="{{ url('plan/projects') }}" class="ps-4">
-                    <i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> ข้อมูลโครงการ & แผนเงิน
-                </a>
-            </li>
-        </ul>
-                </li>
-
-                <li>
-                    <a href="#"><i class="fa-solid fa-wallet me-2"></i> การตัดงบประมาณ</a>
-                </li>
-                <li>
-                    <a href="#"><i class="fa-solid fa-line-chart me-2"></i> ติดตามความก้าวหน้า</a>
+                <li class="{{ Request::is('hr/personnels*') ? 'active' : '' }}">
+                    <a href="{{ url('hr/personnels') }}"><i class="fa-solid fa-user-tie me-2"></i> ข้อมูลบุคลากร</a>
                 </li>
             </ul>
-        </nav>
+        </li>
+
+        <!-- Plan Menu -->
+        <li>
+            <a href="#projectPlanMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('config*', 'plan*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('config*', 'plan*') ? '' : 'collapsed' }}">
+                <i class="fa-solid fa-folder-open me-2"></i> แผนโครงการ
+            </a>
+            <ul class="collapse list-unstyled submenu-list {{ Request::is('config*', 'plan/*') ? 'show' : '' }}" id="projectPlanMenu">
+                <li>
+                    @php
+                        $isBaseConfigActive = Request::is('config/fiscal-years*', 'plan/missions*', 'plan/strategic-issues*', 'plan/goals*', 'plan/strategies*', 'plan/budget-sources*', 'plan/programs*', 'plan/budget-categories*');
+                    @endphp
+                    <a href="#baseConfigMenu" data-bs-toggle="collapse" aria-expanded="{{ $isBaseConfigActive ? 'true' : 'false' }}" class="dropdown-toggle ps-4 bg-dark text-warning {{ $isBaseConfigActive ? '' : 'collapsed' }}">
+                        <i class="fa-solid fa-gears me-2"></i> ข้อมูลพื้นฐานยุทธศาสตร์
+                    </a>
+                    <ul class="collapse list-unstyled {{ $isBaseConfigActive ? 'show' : '' }}" id="baseConfigMenu" style="background-color: #0b0f17;">
+                        <li class="{{ Request::is('config/fiscal-years*') ? 'active' : '' }}"><a href="{{ url('config/fiscal-years') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-calendar-check me-2 text-warning"></i> จัดการปีงบประมาณ</a></li>
+                        <li class="{{ Request::is('plan/missions*') ? 'active' : '' }}"><a href="{{ url('plan/missions') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-compass me-2"></i> ชั้นที่ 1: พันธกิจ</a></li>
+                        <li class="{{ Request::is('plan/strategic-issues*') ? 'active' : '' }}"><a href="{{ url('plan/strategic-issues') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-bullseye me-2"></i> ชั้นที่ 2: ประเด็นยุทธศาสตร์</a></li>
+                        <li class="{{ Request::is('plan/goals*') ? 'active' : '' }}"><a href="{{ url('plan/goals') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-crosshairs me-2"></i> ชั้นที่ 3: เป้าประสงค์</a></li>
+                        <li class="{{ Request::is('plan/strategies*') ? 'active' : '' }}"><a href="{{ url('plan/strategies') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-chess-knight me-2"></i> ชั้นที่ 4: กลยุทธ์องค์กร</a></li>
+                        <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}"><a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-wallet me-2 text-success"></i> แหล่งเงินงบประมาณ</a></li>
+                        <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}"><a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-layer-group me-2 text-info"></i> แผนงาน (แหล่งเงิน L1)</a></li>
+                        <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}"><a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-tags me-2 text-danger"></i> หมวดงบรายจ่าย (L2)</a></li>
+                    </ul>
+                </li>
+                <li class="{{ Request::is('plan/projects*') ? 'active' : '' }}">
+                    <a href="{{ url('plan/projects') }}" class="ps-4"><i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> ข้อมูลโครงการ & แผนเงิน</a>
+                </li>
+            </ul>
+        </li>
+
+        <li><a href="#"><i class="fa-solid fa-wallet me-2"></i> การตัดงบประมาณ</a></li>
+        <li><a href="#"><i class="fa-solid fa-line-chart me-2"></i> ติดตามความก้าวหน้า</a></li>
+        
+        <!-- Logout Menu -->
+        <li class="mt-4">
+            <form id="logout-form" action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="button" onclick="confirmLogout()" class="btn btn-outline-danger w-75 mx-auto d-block btn-sm">
+                    <i class="fa-solid fa-right-from-bracket me-2"></i> ออกจากระบบ
+                </button>
+            </form>
+        </li>
+    </ul>
+</nav>
  @endunless
         <div id="content" @if($isLoginPage) style="padding:0;" @endif>
              @unless($isLoginPage)
@@ -292,6 +262,22 @@
                 showConfirmButton: false,
                 timer: 1500
             });
+        }
+        function confirmLogout() {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: "คุณต้องการออกจากระบบใช่หรือไม่?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            })
         }
     </script>
     @stack('scripts')
