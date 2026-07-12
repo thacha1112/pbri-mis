@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Common\Personnel;
 use App\Models\Common\Department;
+use App\Models\User;
+use DB;
 
 class PersonnelController extends Controller
 {
@@ -29,16 +31,31 @@ class PersonnelController extends Controller
         $request->validate([
             'firstname' => 'required|string|max:100',
             'lastname' => 'required|string|max:100',
-            'email' => 'nullable|email|max:155',
+            'email' => 'nullable|email|max:155|unique:personnels,email',
             'department_id' => 'required|exists:departments,id'
         ], [
             'firstname.required' => 'กรุณากรอกชื่อจริง',
             'lastname.required' => 'กรุณากรอกนามสกุล',
             'email.email' => 'รูปแบบอีเมลไม่ถูกต้อง',
-            'department_id.required' => 'กรุณาเลือกหน่วยงานสังกัด'
+            'department_id.required' => 'กรุณาเลือกหน่วยงานสังกัด',
+            'email.unique' => 'อีเมลนี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบอีกครั้ง'
         ]);
 
-        Personnel::create($request->all());
+        DB::transaction(function () use ($request) {
+        
+            // ก. สร้างข้อมูลในตาราง personnel
+            $personnel = Personnel::create($request->all());
+
+            // ข. สร้าง User ที่ผูกกับ personnel นี้
+            // สมมติว่าตาราง users มี field 'personnals_id' และ 'username' หรือ 'password'
+           User::updateOrCreate(
+                ['personnals_id' => $personnel->id], // เงื่อนไขในการค้นหา (ถ้าเจอ personals_id นี้ให้ update)
+                [
+                    'username' => $request->email,   // ข้อมูลที่จะให้ update หรือสร้าง
+                    // 'password' => ... (ถ้าเป็น update อาจจะไม่ต้องใส่ password เพื่อไม่ให้ทับของเก่า)
+                ]
+            );
+        });
 
         return redirect('hr/personnels')->with('success', 'เพิ่มข้อมูลบุคลากรเรียบร้อยแล้ว');
     }

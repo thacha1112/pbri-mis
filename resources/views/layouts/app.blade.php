@@ -147,57 +147,79 @@
         <h5 class="mb-0 fw-bold"><i class="fa-solid fa-layer-group me-2 text-info"></i>PBRI MIS</h5>
     </div>
     <ul class="list-unstyled components mt-3">
-        <li class="{{ Request::is('/') ? 'active' : '' }}">
-            <a href="{{ url('/') }}"><i class="fa-solid fa-chart-pie me-2"></i> แดชบอร์ด</a>
-        </li>
+        {{-- เมนูจัดการ UMS (ให้เฉพาะ Super Admin หรือ Admin เห็น) --}}
+        
+        @if(auth()->user() && auth()->user()->hasRole(1))
+            <li class="nav-header ps-3 text-uppercase text-white-50 fs-7 fw-bold mb-1">ระบบจัดการสิทธิ์</li>
+            <li>
+                <a href="#umsMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('ums*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('ums*') ? '' : 'collapsed' }}">
+                    <i class="fa-solid fa-shield-halved me-2 text-info"></i> ระบบจัดการสิทธิ์ (UMS)
+                </a>
+                <ul class="collapse list-unstyled submenu-list {{ Request::is('ums*') ? 'show' : '' }}" id="umsMenu">
+                    <li class="{{ Request::is('ums/roles*') ? 'active' : '' }}">
+                        <a href="{{ url('ums/roles') }}"><i class="fa-solid fa-user-gear me-2"></i> จัดการบทบาท (Roles)</a>
+                    </li>
+                    <li class="{{ Request::is('ums/user-roles*') ? 'active' : '' }}">
+                        <a href="{{ url('ums/user-roles') }}"><i class="fa-solid fa-users-gear me-2"></i> กำหนดสิทธิ์ผู้ใช้</a>
+                    </li>
+                </ul>
+            </li>
+        @endif
         
         <!-- HR Menu -->
-        <li>
-            <a href="#hrMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('hr*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('hr*') ? '' : 'collapsed' }}">
-                <i class="fa-solid fa-users me-2 text-warning"></i> งานบุคลากร (HR)
-            </a>
-            <ul class="collapse list-unstyled submenu-list {{ Request::is('hr*') ? 'show' : '' }}" id="hrMenu">
-                <li class="{{ Request::is('hr/departments*') ? 'active' : '' }}">
-                    <a href="{{ url('hr/departments') }}"><i class="fa-solid fa-sitemap me-2"></i> โครงสร้างหน่วยงาน</a>
-                </li>
-                <li class="{{ Request::is('hr/personnels*') ? 'active' : '' }}">
-                    <a href="{{ url('hr/personnels') }}"><i class="fa-solid fa-user-tie me-2"></i> ข้อมูลบุคลากร</a>
-                </li>
-            </ul>
-        </li>
+        @if(auth()->user() && auth()->user()->hasAnyRoleIds([1,6]))
+            <li class="nav-header ps-3 text-uppercase text-white-50 fs-7 fw-bold mb-1">งานบุคลากร (HR)</li>
+            <li>
+                <a href="#hrMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('hr*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('hr*') ? '' : 'collapsed' }}">
+                    <i class="fa-solid fa-users me-2 text-warning"></i> งานบุคลากร (HR)
+                </a>
+                <ul class="collapse list-unstyled submenu-list {{ Request::is('hr*') ? 'show' : '' }}" id="hrMenu">
+                    @if(auth()->user()->hasRole(1))
+                        <li class="{{ Request::is('hr/departments*') ? 'active' : '' }}">
+                            <a href="{{ url('hr/departments') }}"><i class="fa-solid fa-sitemap me-2"></i> โครงสร้างหน่วยงาน</a>
+                        </li>
+                    @endif
+                    <li class="{{ Request::is('hr/personnels*') ? 'active' : '' }}">
+                        <a href="{{ url('hr/personnels') }}"><i class="fa-solid fa-user-tie me-2"></i> ข้อมูลบุคลากร</a>
+                    </li>
+                </ul>
+            </li>
+        @endif
 
         <!-- Plan Menu -->
-        <li>
-            <a href="#projectPlanMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('config*', 'plan*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('config*', 'plan*') ? '' : 'collapsed' }}">
-                <i class="fa-solid fa-folder-open me-2"></i> แผนโครงการ
-            </a>
-            <ul class="collapse list-unstyled submenu-list {{ Request::is('config*', 'plan/*') ? 'show' : '' }}" id="projectPlanMenu">
-                <li>
-                    @php
-                        $isBaseConfigActive = Request::is('config/fiscal-years*', 'plan/missions*', 'plan/strategic-issues*', 'plan/goals*', 'plan/strategies*', 'plan/budget-sources*', 'plan/programs*', 'plan/budget-categories*');
-                    @endphp
-                    <a href="#baseConfigMenu" data-bs-toggle="collapse" aria-expanded="{{ $isBaseConfigActive ? 'true' : 'false' }}" class="dropdown-toggle ps-4 bg-dark text-warning {{ $isBaseConfigActive ? '' : 'collapsed' }}">
-                        <i class="fa-solid fa-gears me-2"></i> ข้อมูลพื้นฐานยุทธศาสตร์
-                    </a>
-                    <ul class="collapse list-unstyled {{ $isBaseConfigActive ? 'show' : '' }}" id="baseConfigMenu" style="background-color: #0b0f17;">
-                        <li class="{{ Request::is('config/fiscal-years*') ? 'active' : '' }}"><a href="{{ url('config/fiscal-years') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-calendar-check me-2 text-warning"></i> จัดการปีงบประมาณ</a></li>
-                        <li class="{{ Request::is('plan/missions*') ? 'active' : '' }}"><a href="{{ url('plan/missions') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-compass me-2"></i> ชั้นที่ 1: พันธกิจ</a></li>
-                        <li class="{{ Request::is('plan/strategic-issues*') ? 'active' : '' }}"><a href="{{ url('plan/strategic-issues') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-bullseye me-2"></i> ชั้นที่ 2: ประเด็นยุทธศาสตร์</a></li>
-                        <li class="{{ Request::is('plan/goals*') ? 'active' : '' }}"><a href="{{ url('plan/goals') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-crosshairs me-2"></i> ชั้นที่ 3: เป้าประสงค์</a></li>
-                        <li class="{{ Request::is('plan/strategies*') ? 'active' : '' }}"><a href="{{ url('plan/strategies') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-chess-knight me-2"></i> ชั้นที่ 4: กลยุทธ์องค์กร</a></li>
-                        <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}"><a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-wallet me-2 text-success"></i> แหล่งเงินงบประมาณ</a></li>
-                        <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}"><a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-layer-group me-2 text-info"></i> แผนงาน (แหล่งเงิน L1)</a></li>
-                        <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}"><a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-tags me-2 text-danger"></i> หมวดงบรายจ่าย (L2)</a></li>
-                    </ul>
-                </li>
-                <li class="{{ Request::is('plan/projects*') ? 'active' : '' }}">
-                    <a href="{{ url('plan/projects') }}" class="ps-4"><i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> ข้อมูลโครงการ & แผนเงิน</a>
-                </li>
-            </ul>
-        </li>
-
-        <li><a href="#"><i class="fa-solid fa-wallet me-2"></i> การตัดงบประมาณ</a></li>
-        <li><a href="#"><i class="fa-solid fa-line-chart me-2"></i> ติดตามความก้าวหน้า</a></li>
+        @if(auth()->user() && auth()->user()->hasAnyRoleIds([2,4]))
+            <li class="nav-header ps-3 text-uppercase text-white-50 fs-7 fw-bold mb-1">ติดตามความก้าวหน้าโครงการ</li>
+            <li>
+                <a href="#projectPlanMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('config*', 'plan*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('config*', 'plan*') ? '' : 'collapsed' }}">
+                    <i class="fa-solid fa-folder-open me-2"></i> แผนโครงการ
+                </a>
+                <ul class="collapse list-unstyled submenu-list {{ Request::is('config*', 'plan/*') ? 'show' : '' }}" id="projectPlanMenu">
+                    @if(auth()->user()->hasAnyRoleIds([1,2]))
+                        <li>
+                            @php
+                                $isBaseConfigActive = Request::is('config/fiscal-years*', 'plan/missions*', 'plan/strategic-issues*', 'plan/goals*', 'plan/strategies*', 'plan/budget-sources*', 'plan/programs*', 'plan/budget-categories*');
+                            @endphp
+                            <a href="#baseConfigMenu" data-bs-toggle="collapse" aria-expanded="{{ $isBaseConfigActive ? 'true' : 'false' }}" class="dropdown-toggle ps-4 bg-dark text-warning {{ $isBaseConfigActive ? '' : 'collapsed' }}">
+                                <i class="fa-solid fa-gears me-2"></i> ข้อมูลพื้นฐานยุทธศาสตร์
+                            </a>
+                            <ul class="collapse list-unstyled {{ $isBaseConfigActive ? 'show' : '' }}" id="baseConfigMenu" style="background-color: #0b0f17;">
+                                <li class="{{ Request::is('config/fiscal-years*') ? 'active' : '' }}"><a href="{{ url('config/fiscal-years') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-calendar-check me-2 text-warning"></i> จัดการปีงบประมาณ</a></li>
+                                <li class="{{ Request::is('plan/missions*') ? 'active' : '' }}"><a href="{{ url('plan/missions') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-compass me-2"></i> ชั้นที่ 1: พันธกิจ</a></li>
+                                <li class="{{ Request::is('plan/strategic-issues*') ? 'active' : '' }}"><a href="{{ url('plan/strategic-issues') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-bullseye me-2"></i> ชั้นที่ 2: ประเด็นยุทธศาสตร์</a></li>
+                                <li class="{{ Request::is('plan/goals*') ? 'active' : '' }}"><a href="{{ url('plan/goals') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-crosshairs me-2"></i> ชั้นที่ 3: เป้าประสงค์</a></li>
+                                <li class="{{ Request::is('plan/strategies*') ? 'active' : '' }}"><a href="{{ url('plan/strategies') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-chess-knight me-2"></i> ชั้นที่ 4: กลยุทธ์องค์กร</a></li>
+                                <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}"><a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-wallet me-2 text-success"></i> แหล่งเงินงบประมาณ</a></li>
+                                <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}"><a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-layer-group me-2 text-info"></i> แผนงาน (แหล่งเงิน L1)</a></li>
+                                <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}"><a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-tags me-2 text-danger"></i> หมวดงบรายจ่าย (L2)</a></li>
+                            </ul>
+                        </li>
+                    @endif
+                    <li class="{{ Request::is('plan/projects*') ? 'active' : '' }}">
+                        <a href="{{ url('plan/projects') }}" class="ps-4"><i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> ข้อมูลโครงการ & แผนเงิน</a>
+                    </li>
+                </ul>
+            </li>
+        @endif
         
         <!-- Logout Menu -->
         <li class="mt-4">

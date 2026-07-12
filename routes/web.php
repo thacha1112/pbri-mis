@@ -19,6 +19,10 @@ use App\Http\Controllers\Plan\BudgetCategoryController;
 use App\Http\Controllers\Plan\ProjectController;
 use App\Http\Controllers\Plan\SubActivityController;
 
+use App\Http\Controllers\Ums\RoleController;
+use App\Http\Controllers\Ums\PermissionController;
+use App\Http\Controllers\Ums\UserRoleController;
+
 
 
     // ไม่ต้องครอบ Middleware 'web' ซ้ำซ้อน
@@ -112,5 +116,10 @@ Route::middleware(['checklogin'])->group(function () {
 
     // วางไว้นอก Group prefix 'plan' ชั่วคราวเพื่อเช็คปัญหา
     Route::post('api/sub-activities/store/{activityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'store']);
+
+    Route::prefix('ums')->group(function () {
+        Route::resource('roles', RoleController::class);
+        Route::resource('user-roles', UserRoleController::class)->only(['index', 'edit', 'update']);
+    });
 
 });

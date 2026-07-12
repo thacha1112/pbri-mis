@@ -5,28 +5,23 @@
     <a href="{{ url('plan/projects') }}" class="btn btn-outline-secondary btn-sm me-3"><i class="fa-solid fa-arrow-left"></i> กลับตารางโครงการ</a>
     <h4 class="m-0 fw-bold text-dark"><i class="fa-solid fa-file-signature text-primary me-2"></i>บันทึกแผนโครงการ</h4>
 </div>
-
+{{-- 1. สร้างตัวแปรระบุ Tab ปัจจุบัน (จาก URL query string หรือ default คือ general) --}}
+@php $activeTab = request()->get('tab', 'general'); @endphp
 <ul class="nav nav-tabs border-bottom-0 custom-project-tabs" id="projectTab" role="tablist">
+   @foreach(['general' => 'ข้อมูลทั่วไป', 'alignment' => 'ความสอดคล้องพันธกิจ', 'details' => 'รายละเอียดโครงการ', 'budget' => 'แหล่งเงินโครงการ', 'activities' => 'แผนกิจกรรม & เบิกจ่าย'] as $key => $label)
     <li class="nav-item">
-        <button class="nav-link active fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-pane" type="button" role="tab"><i class="fa-solid fa-circle-info me-1"></i> 1. ข้อมูลทั่วไป</button>
+        <a class="nav-link fw-bold {{ $activeTab == $key ? 'active' : '' }} {{ (!$isEdit && $key != 'general') ? 'disabled' : '' }}" 
+               onclick="window.location.href='{{ url('plan/projects', [$project->id ?? 0]) }}/edit?tab={{ $key }}'"
+                type="button">
+            {{ $label }}
+        </a>
     </li>
-    <li class="nav-item">
-        <button class="nav-link fw-bold {{ !$isEdit ? 'disabled text-black-50 bg-light' : '' }}" id="alignment-tab" data-bs-toggle="tab" data-bs-target="#alignment-pane" type="button" role="tab"><i class="fa-solid fa-diagram-project me-1"></i> 2. ความสอดคล้องพันธกิจ</button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link fw-bold {{ !$isEdit ? 'disabled text-black-50 bg-light' : '' }}" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-pane" type="button" role="tab"><i class="fa-solid fa-list-check me-1"></i> 3. รายละเอียดโครงการ</button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link fw-bold {{ !$isEdit ? 'disabled text-black-50 bg-light' : '' }}" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget-pane" type="button" role="tab"><i class="fa-solid fa-sack-dollar me-1"></i> 4. แหล่งเงินโครงการ</button>
-    </li>
-    <li class="nav-item">
-        <button class="nav-link fw-bold {{ !$isEdit ? 'disabled text-black-50 bg-light' : '' }}" id="activities-tab" data-bs-toggle="tab" data-bs-target="#activities-pane" type="button" role="tab"><i class="fa-solid fa-chart-line me-1"></i> 5. แผนกิจกรรม & เบิกจ่าย</button>
-    </li>
+    @endforeach
 </ul>
 
 <div class="tab-content card border-0 shadow-sm p-4 bg-white rounded-bottom" id="projectTabContent" style="border-top-left-radius: 0px !important;">
 
-    <div class="tab-pane fade show active" id="general-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
+    <div class="tab-pane fade {{ $activeTab == 'general' ? 'show active' : '' }}" id="general-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
         <form id="generalForm">
             @csrf
             @if($isEdit)
@@ -127,7 +122,8 @@
         </form>
     </div>
 
-    <div class="tab-pane fade" id="alignment-pane" role="tabpanel" aria-labelledby="alignment-tab" tabindex="0">
+    {{-- Tab ความสอดคล้อง --}}
+    <div class="tab-pane fade {{ $activeTab == 'alignment' ? 'show active' : '' }}" id="alignment-pane" role="tabpanel" aria-labelledby="alignment-tab" tabindex="0">
         @if($isEdit)
             @include('plan.projects.tabs.alignment')
         @else
@@ -137,7 +133,9 @@
             </div>
         @endif
     </div>
-    <div class="tab-pane fade" id="details-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+
+    {{-- Tab รายละเอียดโครงการ --}}
+    <div class="tab-pane fade {{ $activeTab == 'details' ? 'show active' : '' }}" id="details-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
         @if($isEdit)
             @include('plan.projects.tabs.details')
         @else
@@ -147,7 +145,9 @@
             </div>
         @endif
     </div>
-   <div class="tab-pane fade" id="budget-pane" role="tabpanel" aria-labelledby="budget-tab" tabindex="0">
+
+   {{-- Tab แหล่งเงิน --}}
+    <div class="tab-pane fade {{ $activeTab == 'budget' ? 'show active' : '' }}" id="budget-pane" role="tabpanel" aria-labelledby="budget-tab" tabindex="0">
         @if($isEdit)
             {{-- ดึงไฟล์ย่อยของแท็บแหล่งเงินมาแสดง --}}
             @include('plan.projects.tabs.budget')
@@ -158,7 +158,9 @@
             </div>
         @endif
     </div>
-    <div class="tab-pane fade" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab" tabindex="0">
+    
+   {{-- Tab กิจกรรม --}}
+    <div class="tab-pane fade {{ $activeTab == 'activities' ? 'show active' : '' }}" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab" tabindex="0">
           @if($isEdit)
             {{-- ดึงไฟล์ย่อยของแท็บแหล่งเงินมาแสดง --}}
             @include('plan.projects.tabs.activities')

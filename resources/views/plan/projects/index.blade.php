@@ -13,15 +13,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold text-secondary">ค้นหาตามหน่วยงาน</label>
-                <select class="form-select select2-filter" id="filter_department" onchange="applyFilters()">
-                    <option value="all">-- ทุกหน่วยงาน --</option>
-                    @foreach($departments as $d)
-                        <option value="{{ $d->id }}" {{ request('department_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @if(auth()->user()->hasAnyRoleIds([1,2]))
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-secondary">ค้นหาตามหน่วยงาน</label>
+                    <select class="form-select select2-filter" id="filter_department" onchange="applyFilters()">
+                        <option value="all">-- ทุกหน่วยงาน --</option>
+                        @foreach($departments as $d)
+                            <option value="{{ $d->id }}" {{ request('department_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
         </div>
     </div>
 </div>
@@ -128,8 +130,16 @@
                             showConfirmButton: false,
                             timer: 1200
                         });
-                        $(`#row-${id}`).fadeOut(400, function() {
-                            $(this).remove();
+                        $(`#row-${id}`).fadeOut(400, function() { $(this).remove(); });
+                    },
+                    error: function(xhr) {
+                        // ดึง error message ที่ส่งมาจาก controller
+                        let msg = xhr.responseJSON ? xhr.responseJSON.message : 'เกิดข้อผิดพลาด';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'ไม่สามารถลบได้',
+                            text: msg,
+                            confirmButtonColor: '#6c757d'
                         });
                     }
                 });

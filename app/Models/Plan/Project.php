@@ -111,5 +111,19 @@ class Project extends Model
         // ดึงผลรวมของ allocated_amount ของโปรเจกต์นี้
         return $this->projectBudgetSources()->sum('allocated_amount');
     }
+
+    public function activityBudgets(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        // โครงการมีหลายกิจกรรม (activities) 
+        // และกิจกรรมมีหลายงบประมาณ (activity_budgets)
+        return $this->hasManyThrough(
+            \App\Models\Plan\ActivityBudget::class, // ตารางปลายทาง
+            \App\Models\Plan\ProjectActivity::class,       // ตารางกลาง
+            'project_id',                                  // FK ของ Project ในตาราง Activities
+            'activity_id',                                 // FK ของ Activity ในตาราง Budgets
+            'id',                                          // PK ของ Project
+            'id'                                           // PK ของ Activity
+        );
+    }
     
 }

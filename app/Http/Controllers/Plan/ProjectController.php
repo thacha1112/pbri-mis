@@ -24,20 +24,36 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         $query = Project::query();
+        $user = auth()->user();
 
-        // กรองด้วยปีงบประมาณ
+        // 1. ตรวจสอบสิทธิ์: ถ้าไม่ใช่ Super Admin หรือ Admin (role 1, 2)
+        // ให้บังคับ where เฉพาะหน่วยงานของ User คนนั้น
+        if (!$user->hasAnyRoleIds([1, 2])) {
+            // ดึง department_id จากตาราง personnel ของ user
+            if ($user->personnal) {
+                $query->where('department_id', $user->personnal->department_id);
+            } else {
+                // กรณีไม่มีข้อมูล personnel ให้กันไว้เผื่อ user ที่ไม่มีสังกัด
+                $query->whereRaw('1=0'); 
+            }
+        } else {
+            // 2. ถ้าเป็น Admin (มีสิทธิ์เห็นทุกหน่วย) ถึงจะยอมให้กรองด้วย Filter ได้
+            if ($request->has('department_id') && $request->department_id != 'all') {
+                $query->where('department_id', $request->department_id);
+            }
+        }
+
+        // กรองด้วยปีงบประมาณ (ให้ใช้ได้ทุกคน)
         if ($request->has('fiscal_year_id') && $request->fiscal_year_id != 'all') {
             $query->where('fiscal_year_id', $request->fiscal_year_id);
         }
 
-        // กรองด้วยหน่วยงาน
-        if ($request->has('department_id') && $request->department_id != 'all') {
-            $query->where('department_id', $request->department_id);
-        }
-
-        $projects = $query->paginate(10)->withQueryString(); // เพิ่ม withQueryString() เพื่อคงค่าฟิลเตอร์เวลาเปลี่ยนหน้า
+        $projects = $query->paginate(10)->withQueryString();
+        
+        // สำหรับ Admin ให้เห็นรายชื่อหน่วยงานทั้งหมด เพื่อเลือก Filter
+        // สำหรับ User ปกติ ไม่จำเป็นต้องส่ง $departments ไปให้เห็นก็ได้ หรือจะส่งไปให้เห็นหน่วยงานตัวเองอย่างเดียวก็ได้
         $fiscalYears = FiscalYear::all();
-        $departments = Department::all();
+        $departments = $user->hasAnyRoleIds([1, 2]) ? Department::all() : collect();
 
         return view('plan.projects.index', compact('projects', 'fiscalYears', 'departments'));
     }
@@ -45,10 +61,11 @@ class ProjectController extends Controller
     /**
      * หน้าฟอร์มจัดทำโครงการใหม่ (โหมดเพิ่มข้อมูลเริ่มต้น)
      */
-    public function create()
+    public function create(Request $request)
     {
         $project = new Project(); // ส่งก้อนโมเดลว่างเพื่อแชร์ฟอร์มร่วมกันกับโหมดแก้ไข
         $isEdit = false;
+        $activeTab = $request->get('tab', 'general'); // รับค่าจาก URL
 
         // ดึงข้อมูล Master Lookups ไปป้อนลงช่อง Select ฟิลด์ข้อมูลทั่วไป
         $fiscalYears       = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
@@ -66,7 +83,8 @@ class ProjectController extends Controller
             'personnels',
             'projectMethods',
             'constructionTypes',
-            'overseasTypes'
+            'overseasTypes',
+            'activeTab'
         ));
     }
 
@@ -107,10 +125,11 @@ class ProjectController extends Controller
     /**
      * หน้าฟอร์มสำหรับดึงข้อมูลโครงการมาแสดงผลแบบแยก Tab ในกรณีเข้าสู่โหมดแก้ไขข้อมูล
      */
-    public function edit($id)
+    public function edit(Request $request,$id)
     {
         $project = Project::with('projectBudgetSources.budgetSource', 'activities.budgets','activities.subActivities')->findOrFail($id);
         $isEdit = true;
+        $activeTab = $request->get('tab', 'general'); // รับค่าจาก URL
 
         $fiscalYears       = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
         $departments       = Department::where('status', 'active')->get();
@@ -169,8 +188,24 @@ class ProjectController extends Controller
      */
     public function destroy($id)
     {
-        Project::findOrFail($id)->delete();
-        return response()->json(['success' => true, 'message' => 'ลบข้อมูลโครงการเรียบร้อยแล้ว']);
+        $project = Project::findOrFail($id);
+
+        // ตรวจสอบว่าโครงการนี้มีงบประมาณผูกพันอยู่หรือไม่
+        // สมมติว่าความสัมพันธ์คือ $project->activityBudgets()->exists()
+        // หรือเช็คจากตารางที่คุณเก็บข้อมูลแหล่งเงิน
+        if ($project->activityBudgets()->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ไม่สามารถลบโครงการได้ เนื่องจากมีข้อมูลการจัดสรรแหล่งเงินแล้ว'
+            ], 422);
+        }
+
+        $project->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'ลบโครงการเรียบร้อยแล้ว'
+        ]);
     }
     /**
      * อัปเดตข้อมูลมิติยุทธศาสตร์ความสอดคล้องพันธกิจ (Tabที่ 2)
