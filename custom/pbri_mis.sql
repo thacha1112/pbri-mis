@@ -11,7 +11,7 @@
  Target Server Version : 80407 (8.4.7)
  File Encoding         : 65001
 
- Date: 12/07/2026 10:30:07
+ Date: 24/07/2026 14:35:11
 */
 
 SET NAMES utf8mb4;
@@ -27,7 +27,7 @@ CREATE TABLE `acquisition_methods`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of acquisition_methods
@@ -44,7 +44,7 @@ CREATE TABLE `asset_categories`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of asset_categories
@@ -125,7 +125,7 @@ CREATE TABLE `asset_status`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of asset_status
@@ -145,7 +145,7 @@ CREATE TABLE `departments`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `parent_id`(`parent_id` ASC) USING BTREE,
   CONSTRAINT `departments_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of departments
@@ -158,6 +158,18 @@ INSERT INTO `departments` VALUES (5, 'กองกฎหมาย', 1, 'active',
 INSERT INTO `departments` VALUES (6, 'กองทรัพยากรบุคคล', 1, 'active', '2026-06-07 06:22:52', '2026-06-07 06:22:52');
 INSERT INTO `departments` VALUES (7, 'กองยุทธศาสตร์และวิเทศสัมพันธ์', 1, 'active', '2026-06-07 06:23:01', '2026-06-07 06:23:01');
 INSERT INTO `departments` VALUES (8, 'กองเทคโนโลยีดิจิทัล', 1, 'active', '2026-06-07 06:23:12', '2026-06-07 06:23:12');
+INSERT INTO `departments` VALUES (9, 'กองกิจการนักศึกษา', 1, 'active', '2026-07-24 02:47:25', '2026-07-24 02:47:25');
+INSERT INTO `departments` VALUES (10, 'สำนักวิชาการ', NULL, 'active', '2026-07-24 02:51:56', '2026-07-24 02:51:56');
+INSERT INTO `departments` VALUES (11, 'กองส่งเสริมวิชาการและคุณภาพการศึกษา', 10, 'active', '2026-07-24 02:52:10', '2026-07-24 02:52:10');
+INSERT INTO `departments` VALUES (12, 'กองทะเบียนและประมวลผล', 10, 'active', '2026-07-24 02:52:19', '2026-07-24 02:52:19');
+INSERT INTO `departments` VALUES (13, 'กองวิจัยและพัฒนานวัตกรรม', 10, 'active', '2026-07-24 02:52:27', '2026-07-24 02:52:27');
+INSERT INTO `departments` VALUES (14, 'กองบริการวิชาการ', 10, 'active', '2026-07-24 02:52:36', '2026-07-24 02:52:36');
+INSERT INTO `departments` VALUES (15, 'สำนักงานบัณฑิตศึกษา', 10, 'active', '2026-07-24 02:52:46', '2026-07-24 02:52:46');
+INSERT INTO `departments` VALUES (16, 'คณะสาธารณสุข', NULL, 'active', '2026-07-24 02:53:08', '2026-07-24 02:53:08');
+INSERT INTO `departments` VALUES (17, 'คณะแพทยศาสตร์', NULL, 'active', '2026-07-24 02:53:20', '2026-07-24 02:53:20');
+INSERT INTO `departments` VALUES (18, 'คณะพยาบาล', NULL, 'active', '2026-07-24 02:53:27', '2026-07-24 02:53:27');
+INSERT INTO `departments` VALUES (19, 'ตรวจสอบภายใน', NULL, 'active', '2026-07-24 02:53:34', '2026-07-24 02:53:34');
+INSERT INTO `departments` VALUES (20, 'คณะเภสัชศาสตร์', NULL, 'active', '2026-07-24 02:53:43', '2026-07-24 02:53:43');
 
 -- ----------------------------
 -- Table structure for fiscal_years
@@ -172,13 +184,14 @@ CREATE TABLE `fiscal_years`  (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `fiscal_years_year_unique`(`year` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of fiscal_years
 -- ----------------------------
 INSERT INTO `fiscal_years` VALUES (1, 2569, 'active', 'ปีงบประมาณเริ่มต้นระบบแผนงาน', '2026-06-07 11:20:54', '2026-06-07 11:20:54');
-INSERT INTO `fiscal_years` VALUES (2, 2570, 'active', 'ปีงบประมาณล่วงหน้า', '2026-06-07 11:20:54', '2026-06-07 11:20:54');
+INSERT INTO `fiscal_years` VALUES (2, 2570, 'inactive', 'ปีงบประมาณล่วงหน้า', '2026-06-07 11:20:54', '2026-07-15 03:17:52');
+INSERT INTO `fiscal_years` VALUES (4, 2568, 'active', NULL, '2026-07-12 12:15:53', '2026-07-12 12:15:53');
 
 -- ----------------------------
 -- Table structure for funding_types
@@ -190,7 +203,7 @@ CREATE TABLE `funding_types`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of funding_types
@@ -246,7 +259,7 @@ CREATE TABLE `personnels`  (
 -- Records of personnels
 -- ----------------------------
 INSERT INTO `personnels` VALUES (1, 'ธชา', 'ศรีนวลขาว', 'thacha@pi.ac.th', NULL, 8, NULL, 'active', '2026-06-07 06:35:38', '2026-07-09 04:13:09');
-INSERT INTO `personnels` VALUES (2, 'ทดสอบ', 'ทดสอบ1', 'charat.pra@pi.ac.th', NULL, 3, NULL, 'active', '2026-07-09 08:30:33', '2026-07-12 02:11:35');
+INSERT INTO `personnels` VALUES (2, 'ทดสอบ', 'ทดสอบ1', 'charat.pra@pi.ac.th', NULL, 5, NULL, 'active', '2026-07-09 08:30:33', '2026-07-12 06:13:00');
 INSERT INTO `personnels` VALUES (4, 'จามจุรี', 'นพนภา', 'tttt@pi.ac.th', NULL, 3, NULL, 'active', '2026-07-09 08:44:03', '2026-07-09 08:44:03');
 
 -- ----------------------------
@@ -265,15 +278,49 @@ CREATE TABLE `plan_activity_budgets`  (
   INDEX `project_budget_source_id`(`project_budget_source_id` ASC) USING BTREE,
   CONSTRAINT `plan_activity_budgets_ibfk_1` FOREIGN KEY (`activity_id`) REFERENCES `plan_project_activities` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `plan_activity_budgets_ibfk_2` FOREIGN KEY (`project_budget_source_id`) REFERENCES `plan_project_budget_sources` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 41 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_activity_budgets
 -- ----------------------------
-INSERT INTO `plan_activity_budgets` VALUES (9, 4, 36, 1000.00, '2026-06-19 11:11:22', '2026-06-19 11:11:22');
-INSERT INTO `plan_activity_budgets` VALUES (13, 5, 36, 2000.00, '2026-06-22 01:16:52', '2026-06-22 01:16:52');
-INSERT INTO `plan_activity_budgets` VALUES (14, 3, 35, 5000.00, '2026-06-22 01:51:10', '2026-06-22 01:51:10');
-INSERT INTO `plan_activity_budgets` VALUES (15, 6, 43, 5000.00, '2026-06-22 06:28:20', '2026-06-22 06:28:20');
+INSERT INTO `plan_activity_budgets` VALUES (31, 13, 51, 220000.00, '2026-07-22 13:52:37', '2026-07-22 13:52:37');
+INSERT INTO `plan_activity_budgets` VALUES (32, 13, 50, 50000.00, '2026-07-22 13:52:37', '2026-07-22 13:52:37');
+INSERT INTO `plan_activity_budgets` VALUES (33, 14, 51, 156000.00, '2026-07-22 14:10:09', '2026-07-22 14:10:09');
+INSERT INTO `plan_activity_budgets` VALUES (34, 15, 51, 74000.00, '2026-07-22 14:10:52', '2026-07-22 14:10:52');
+INSERT INTO `plan_activity_budgets` VALUES (38, 16, 56, 25000.00, '2026-07-23 13:42:47', '2026-07-23 13:42:47');
+INSERT INTO `plan_activity_budgets` VALUES (39, 16, 54, 150000.00, '2026-07-23 13:42:47', '2026-07-23 13:42:47');
+INSERT INTO `plan_activity_budgets` VALUES (40, 16, 55, 100000.00, '2026-07-23 13:42:47', '2026-07-23 13:42:47');
+
+-- ----------------------------
+-- Table structure for plan_activity_payments
+-- ----------------------------
+DROP TABLE IF EXISTS `plan_activity_payments`;
+CREATE TABLE `plan_activity_payments`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `activity_budget_id` bigint UNSIGNED NOT NULL COMMENT 'FK อ้างอิงเงินที่จัดสรรให้กิจกรรม',
+  `payment_type` enum('transfer','borrow','payment') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'payment' COMMENT 'โอน, ยืมเงิน, เบิกจ่ายจริง',
+  `amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
+  `payment_date` date NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `activity_budget_id`(`activity_budget_id` ASC) USING BTREE,
+  CONSTRAINT `fk_activity_payments_budget` FOREIGN KEY (`activity_budget_id`) REFERENCES `plan_activity_budgets` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of plan_activity_payments
+-- ----------------------------
+INSERT INTO `plan_activity_payments` VALUES (1, 31, 'payment', 100000.00, '2026-07-31', 'เบิกจ่าย ครั้งที่ 1', '2026-07-23 13:13:58', '2026-07-23 13:13:58');
+INSERT INTO `plan_activity_payments` VALUES (2, 31, 'payment', 100000.00, '2026-08-31', 'เบิกจ่ายครั้งที่ 2', '2026-07-23 13:31:15', '2026-07-23 13:31:15');
+INSERT INTO `plan_activity_payments` VALUES (3, 31, 'payment', 5000.00, '2026-09-30', 'เบิกจ่ายครั้งสุดท้าย', '2026-07-23 13:31:48', '2026-07-23 13:31:48');
+INSERT INTO `plan_activity_payments` VALUES (4, 32, 'borrow', 50000.00, '2026-10-31', 'ยืมเงิน', '2026-07-23 13:33:35', '2026-07-23 13:33:35');
+INSERT INTO `plan_activity_payments` VALUES (5, 33, 'transfer', 156000.00, '2027-01-21', 'โอนเงินให้วิทยาลัย', '2026-07-23 13:34:27', '2026-07-23 13:34:27');
+INSERT INTO `plan_activity_payments` VALUES (6, 38, 'payment', 25000.00, '2026-07-01', NULL, '2026-07-23 13:43:37', '2026-07-23 13:43:37');
+INSERT INTO `plan_activity_payments` VALUES (7, 39, 'payment', 150000.00, '2026-07-22', NULL, '2026-07-23 13:43:55', '2026-07-23 13:43:55');
+INSERT INTO `plan_activity_payments` VALUES (8, 31, 'payment', 5000.00, '2026-07-30', NULL, '2026-07-24 03:59:51', '2026-07-24 03:59:51');
+INSERT INTO `plan_activity_payments` VALUES (9, 34, 'payment', 25000.00, '2026-08-11', NULL, '2026-07-24 04:02:57', '2026-07-24 04:02:57');
 
 -- ----------------------------
 -- Table structure for plan_budget_categories
@@ -289,7 +336,7 @@ CREATE TABLE `plan_budget_categories`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `program_id`(`program_id` ASC) USING BTREE,
   CONSTRAINT `plan_budget_categories_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `plan_programs` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_budget_categories
@@ -301,6 +348,20 @@ INSERT INTO `plan_budget_categories` VALUES (4, 2, 'งบลงทุน', 'act
 INSERT INTO `plan_budget_categories` VALUES (5, 3, 'งบดำเนินงาน', 'active', '2026-06-07 13:22:12', '2026-06-07 13:22:12');
 INSERT INTO `plan_budget_categories` VALUES (6, 3, 'งบลงทุน', 'active', '2026-06-07 13:22:24', '2026-06-07 13:22:24');
 INSERT INTO `plan_budget_categories` VALUES (7, 3, 'งบจ่ายอื่น', 'active', '2026-06-07 13:22:35', '2026-06-07 13:22:35');
+INSERT INTO `plan_budget_categories` VALUES (8, 4, 'งบลงทุน', 'active', '2026-07-12 12:30:16', '2026-07-12 12:31:38');
+INSERT INTO `plan_budget_categories` VALUES (9, 4, 'งบจ่ายอื่น', 'active', '2026-07-12 12:31:24', '2026-07-12 12:31:24');
+INSERT INTO `plan_budget_categories` VALUES (10, 4, 'งบดำเนินงาน', 'active', '2026-07-12 12:31:50', '2026-07-12 12:31:50');
+INSERT INTO `plan_budget_categories` VALUES (11, 5, 'งบลงทุน', 'active', '2026-07-12 12:32:03', '2026-07-12 12:32:03');
+INSERT INTO `plan_budget_categories` VALUES (12, 5, 'งบดำเนินงาน', 'active', '2026-07-12 12:32:18', '2026-07-12 12:32:18');
+INSERT INTO `plan_budget_categories` VALUES (13, 6, 'งบดำเนินงาน', 'active', '2026-07-12 12:32:30', '2026-07-12 12:32:30');
+INSERT INTO `plan_budget_categories` VALUES (14, 6, 'งบบุคลากร', 'active', '2026-07-12 12:32:47', '2026-07-12 12:32:47');
+INSERT INTO `plan_budget_categories` VALUES (15, 7, 'งบจ่ายอื่น', 'active', '2026-07-12 12:33:31', '2026-07-12 12:33:31');
+INSERT INTO `plan_budget_categories` VALUES (16, 7, 'งบลงทุน', 'active', '2026-07-12 12:33:45', '2026-07-12 12:33:45');
+INSERT INTO `plan_budget_categories` VALUES (17, 7, 'งบดำเนินงาน', 'active', '2026-07-12 12:34:04', '2026-07-12 12:34:04');
+INSERT INTO `plan_budget_categories` VALUES (18, 8, 'งบลงทุน', 'active', '2026-07-12 12:34:15', '2026-07-12 12:34:15');
+INSERT INTO `plan_budget_categories` VALUES (19, 8, 'งบดำเนินงาน', 'active', '2026-07-12 12:34:29', '2026-07-12 12:34:29');
+INSERT INTO `plan_budget_categories` VALUES (20, 9, 'งบดำเนินงาน', 'active', '2026-07-12 12:34:38', '2026-07-12 12:34:38');
+INSERT INTO `plan_budget_categories` VALUES (21, 9, 'งบบุคลากร', 'active', '2026-07-12 12:34:46', '2026-07-12 12:34:46');
 
 -- ----------------------------
 -- Table structure for plan_budget_sources
@@ -316,13 +377,18 @@ CREATE TABLE `plan_budget_sources`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `fk_budget_sources_fiscal_year`(`fiscal_year_id` ASC) USING BTREE,
   CONSTRAINT `fk_budget_sources_fiscal_year` FOREIGN KEY (`fiscal_year_id`) REFERENCES `fiscal_years` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_budget_sources
 -- ----------------------------
 INSERT INTO `plan_budget_sources` VALUES (2, 1, 'เงินงบประมาณ', 'active', '2026-06-07 13:08:14', '2026-06-07 13:08:14');
 INSERT INTO `plan_budget_sources` VALUES (3, 1, 'เงินรายได้', 'active', '2026-06-07 13:08:39', '2026-06-07 13:08:39');
+INSERT INTO `plan_budget_sources` VALUES (4, 4, 'เงินรายได้', 'active', '2026-07-12 12:16:14', '2026-07-19 08:20:27');
+INSERT INTO `plan_budget_sources` VALUES (5, 4, 'เงินงบประมาณ', 'active', '2026-07-12 12:20:28', '2026-07-12 12:20:28');
+INSERT INTO `plan_budget_sources` VALUES (6, 2, 'เงินงบประมาณ', 'active', '2026-07-12 12:20:59', '2026-07-12 12:20:59');
+INSERT INTO `plan_budget_sources` VALUES (7, 2, 'เงินรายได้', 'active', '2026-07-12 12:21:07', '2026-07-12 12:21:07');
+INSERT INTO `plan_budget_sources` VALUES (8, 2, 'เงินพิเศษ', 'active', '2026-07-13 02:26:24', '2026-07-13 02:26:24');
 
 -- ----------------------------
 -- Table structure for plan_construction_types
@@ -342,6 +408,35 @@ CREATE TABLE `plan_construction_types`  (
 -- ----------------------------
 INSERT INTO `plan_construction_types` VALUES (1, 'ไม่ใช่', 'active', NULL, NULL);
 INSERT INTO `plan_construction_types` VALUES (2, 'ใช่', 'active', NULL, NULL);
+
+-- ----------------------------
+-- Table structure for plan_department_allocations
+-- ----------------------------
+DROP TABLE IF EXISTS `plan_department_allocations`;
+CREATE TABLE `plan_department_allocations`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `department_id` bigint UNSIGNED NOT NULL,
+  `fiscal_year_id` bigint UNSIGNED NOT NULL,
+  `source_fiscal_year_id` bigint UNSIGNED NOT NULL,
+  `budget_source_id` bigint UNSIGNED NOT NULL,
+  `program_id` bigint UNSIGNED NULL DEFAULT NULL,
+  `category_id` bigint UNSIGNED NULL DEFAULT NULL,
+  `total_amount` decimal(15, 2) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `unique_allocation`(`department_id` ASC, `fiscal_year_id` ASC, `budget_source_id` ASC, `program_id` ASC, `category_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of plan_department_allocations
+-- ----------------------------
+INSERT INTO `plan_department_allocations` VALUES (5, 5, 1, 4, 5, NULL, NULL, 500000.00, '2026-07-15 12:24:54', '2026-07-15 12:24:54');
+INSERT INTO `plan_department_allocations` VALUES (6, 5, 1, 1, 3, 1, 1, 200000.00, '2026-07-15 12:29:37', '2026-07-15 12:29:37');
+INSERT INTO `plan_department_allocations` VALUES (7, 5, 1, 1, 3, 1, 2, 500000.00, '2026-07-19 06:37:43', '2026-07-19 06:37:43');
+INSERT INTO `plan_department_allocations` VALUES (8, 8, 1, 1, 2, NULL, NULL, 100000.00, '2026-07-19 06:38:20', '2026-07-19 06:38:20');
+INSERT INTO `plan_department_allocations` VALUES (9, 8, 1, 1, 3, 2, 3, 350000.00, '2026-07-19 08:19:51', '2026-07-19 08:19:51');
+INSERT INTO `plan_department_allocations` VALUES (10, 8, 1, 4, 4, 6, 14, 200000.00, '2026-07-19 08:20:55', '2026-07-19 08:21:06');
 
 -- ----------------------------
 -- Table structure for plan_goals
@@ -437,7 +532,7 @@ CREATE TABLE `plan_programs`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `budget_source_id`(`budget_source_id` ASC) USING BTREE,
   CONSTRAINT `plan_programs_ibfk_1` FOREIGN KEY (`budget_source_id`) REFERENCES `plan_budget_sources` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_programs
@@ -445,6 +540,12 @@ CREATE TABLE `plan_programs`  (
 INSERT INTO `plan_programs` VALUES (1, 3, 'แผนงานบุคลากร', 'active', '2026-06-07 13:11:53', '2026-06-07 13:11:53');
 INSERT INTO `plan_programs` VALUES (2, 3, 'แผนงานพื้นฐานด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์', 'active', '2026-06-07 13:12:15', '2026-06-07 13:12:15');
 INSERT INTO `plan_programs` VALUES (3, 3, 'แผนงานยุทธศาสตร์การพัฒนาสถาบันพระบรมราชชนก', 'active', '2026-06-07 13:12:31', '2026-06-07 13:12:31');
+INSERT INTO `plan_programs` VALUES (4, 4, 'แผนงานยุทธศาสตร์การพัฒนาสถาบันพระบรมราชชนก', 'active', '2026-07-12 12:21:50', '2026-07-12 12:21:50');
+INSERT INTO `plan_programs` VALUES (5, 4, 'แผนงานพื้นฐานด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์', 'active', '2026-07-12 12:22:13', '2026-07-12 12:22:13');
+INSERT INTO `plan_programs` VALUES (6, 4, 'แผนงานบุคลากร', 'active', '2026-07-12 12:22:26', '2026-07-12 12:22:26');
+INSERT INTO `plan_programs` VALUES (7, 7, 'แผนงานยุทธศาสตร์การพัฒนาสถาบันพระบรมราชชนก', 'active', '2026-07-12 12:25:51', '2026-07-12 12:25:51');
+INSERT INTO `plan_programs` VALUES (8, 7, 'แผนงานพื้นฐานด้านการพัฒนาและเสริมสร้างศักยภาพทรัพยากรมนุษย์', 'active', '2026-07-12 12:26:08', '2026-07-12 12:26:08');
+INSERT INTO `plan_programs` VALUES (9, 7, 'แผนงานบุคลากร', 'active', '2026-07-12 12:26:20', '2026-07-12 12:26:20');
 
 -- ----------------------------
 -- Table structure for plan_project_activities
@@ -454,10 +555,6 @@ CREATE TABLE `plan_project_activities`  (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `project_id` bigint UNSIGNED NOT NULL,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `objectives` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `indicators` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `target_group` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `outputs` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -465,15 +562,17 @@ CREATE TABLE `plan_project_activities`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `project_id`(`project_id` ASC) USING BTREE,
   CONSTRAINT `plan_project_activities_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `plan_projects` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_project_activities
 -- ----------------------------
-INSERT INTO `plan_project_activities` VALUES (3, 9, 'จัดหาครุภัณฑ์คอมพิวเตอร์', 'วัตถุประสงค์', 'ตัวชี้วัด', 'กลุ่มเป้าหมาย', 'ผลผลิต (Outputs)', '2026-06-15', '2026-06-22', '2026-06-19 07:53:16', '2026-06-19 07:53:16');
-INSERT INTO `plan_project_activities` VALUES (4, 9, 'จัดหาค่าอาหารกลางวัน', 'อาหารกลางวัน', 'อาหารกลางวัน 2', 'อาหารกลางวัน 3', 'อาหารกลางวัน 4', '2026-06-22', '2026-06-29', '2026-06-19 08:17:16', '2026-06-19 08:17:16');
-INSERT INTO `plan_project_activities` VALUES (5, 9, 'กิจกรรมที่ 3', NULL, NULL, NULL, NULL, '2026-06-21', '2026-06-26', '2026-06-22 01:16:52', '2026-06-22 01:16:52');
-INSERT INTO `plan_project_activities` VALUES (6, 10, 'กิจกรรมที่ 1', NULL, NULL, NULL, NULL, '2026-06-22', '2026-06-26', '2026-06-22 06:28:20', '2026-06-22 06:28:20');
+INSERT INTO `plan_project_activities` VALUES (9, 13, 'จัดหาระบบ บริหาร', '2026-07-01', '2026-07-31', '2026-07-19 07:18:01', '2026-07-19 07:21:01');
+INSERT INTO `plan_project_activities` VALUES (11, 13, 'จัดหาระบบการศึกษา', '2026-07-01', '2026-07-31', '2026-07-19 07:21:21', '2026-07-19 07:21:21');
+INSERT INTO `plan_project_activities` VALUES (13, 12, 'จัดประชุม ITA', '2026-07-01', '2026-07-31', '2026-07-22 13:52:28', '2026-07-22 13:52:28');
+INSERT INTO `plan_project_activities` VALUES (14, 12, 'กิจกรรม ประชุมครั้งที่ 2', '2026-09-01', '2026-09-30', '2026-07-22 14:10:09', '2026-07-22 14:10:09');
+INSERT INTO `plan_project_activities` VALUES (15, 12, 'จัดหาอาหาร', '2026-10-01', '2026-10-31', '2026-07-22 14:10:52', '2026-07-22 14:10:52');
+INSERT INTO `plan_project_activities` VALUES (16, 14, 'กิจกรรมที่ 1', '2026-07-01', '2026-07-31', '2026-07-23 13:42:15', '2026-07-23 13:42:15');
 
 -- ----------------------------
 -- Table structure for plan_project_budget_sources
@@ -483,13 +582,14 @@ CREATE TABLE `plan_project_budget_sources`  (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `project_id` bigint UNSIGNED NOT NULL,
   `budget_source_id` bigint UNSIGNED NOT NULL,
+  `department_allocation_id` bigint UNSIGNED NULL DEFAULT NULL,
   `program_id` bigint UNSIGNED NULL DEFAULT NULL,
   `category_id` bigint UNSIGNED NULL DEFAULT NULL,
   `allocated_amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uq_project_source`(`project_id` ASC, `budget_source_id` ASC) USING BTREE,
+  UNIQUE INDEX `uq_project_allocation`(`project_id` ASC, `department_allocation_id` ASC) USING BTREE,
   INDEX `budget_source_id`(`budget_source_id` ASC) USING BTREE,
   INDEX `fk_budget_program`(`program_id` ASC) USING BTREE,
   INDEX `fk_budget_category`(`category_id` ASC) USING BTREE,
@@ -497,14 +597,17 @@ CREATE TABLE `plan_project_budget_sources`  (
   CONSTRAINT `fk_budget_program` FOREIGN KEY (`program_id`) REFERENCES `plan_programs` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
   CONSTRAINT `plan_project_budget_sources_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `plan_projects` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `plan_project_budget_sources_ibfk_2` FOREIGN KEY (`budget_source_id`) REFERENCES `plan_budget_sources` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 44 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 57 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_project_budget_sources
 -- ----------------------------
-INSERT INTO `plan_project_budget_sources` VALUES (35, 9, 2, NULL, NULL, 10000.00, '2026-06-19 10:57:13', '2026-06-19 10:57:13');
-INSERT INTO `plan_project_budget_sources` VALUES (36, 9, 3, 2, 3, 6000.00, '2026-06-19 10:57:13', '2026-06-19 10:57:13');
-INSERT INTO `plan_project_budget_sources` VALUES (43, 10, 2, NULL, NULL, 10000.00, '2026-06-22 06:27:53', '2026-06-22 06:27:53');
+INSERT INTO `plan_project_budget_sources` VALUES (50, 12, 3, 6, 1, 1, 50000.00, '2026-07-16 08:21:58', '2026-07-22 14:16:40');
+INSERT INTO `plan_project_budget_sources` VALUES (51, 12, 5, 5, NULL, NULL, 450000.00, '2026-07-16 08:40:38', '2026-07-22 14:16:40');
+INSERT INTO `plan_project_budget_sources` VALUES (52, 13, 2, 8, NULL, NULL, 85000.00, '2026-07-19 07:03:38', '2026-07-19 07:03:38');
+INSERT INTO `plan_project_budget_sources` VALUES (54, 14, 3, 6, 1, 1, 150000.00, '2026-07-23 13:38:58', '2026-07-23 13:38:58');
+INSERT INTO `plan_project_budget_sources` VALUES (55, 14, 3, 7, 1, 2, 100000.00, '2026-07-23 13:38:58', '2026-07-23 13:38:58');
+INSERT INTO `plan_project_budget_sources` VALUES (56, 14, 5, 5, NULL, NULL, 25000.00, '2026-07-23 13:38:58', '2026-07-23 13:38:58');
 
 -- ----------------------------
 -- Table structure for plan_project_methods
@@ -525,26 +628,6 @@ CREATE TABLE `plan_project_methods`  (
 INSERT INTO `plan_project_methods` VALUES (1, 'ดำเนินการเอง', 'active', NULL, NULL);
 INSERT INTO `plan_project_methods` VALUES (2, ' ดำเนินการเองและโอนให้วิทยาลัย', 'active', NULL, NULL);
 INSERT INTO `plan_project_methods` VALUES (3, 'โอนวิทยาลัย', 'active', NULL, NULL);
-
--- ----------------------------
--- Table structure for plan_project_sub_activities
--- ----------------------------
-DROP TABLE IF EXISTS `plan_project_sub_activities`;
-CREATE TABLE `plan_project_sub_activities`  (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `activity_id` bigint UNSIGNED NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `activity_id`(`activity_id` ASC) USING BTREE,
-  CONSTRAINT `plan_project_sub_activities_ibfk_1` FOREIGN KEY (`activity_id`) REFERENCES `plan_project_activities` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of plan_project_sub_activities
--- ----------------------------
-INSERT INTO `plan_project_sub_activities` VALUES (2, 3, 'ซื้อ window 11', '2026-06-22 03:35:53', '2026-06-22 03:35:53');
 
 -- ----------------------------
 -- Table structure for plan_projects
@@ -596,13 +679,14 @@ CREATE TABLE `plan_projects`  (
   CONSTRAINT `plan_projects_ibfk_7` FOREIGN KEY (`mission_id`) REFERENCES `plan_missions` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `plan_projects_ibfk_8` FOREIGN KEY (`strategic_issue_id`) REFERENCES `plan_strategic_issues` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `plan_projects_ibfk_9` FOREIGN KEY (`goal_id`) REFERENCES `plan_goals` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_projects
 -- ----------------------------
-INSERT INTO `plan_projects` VALUES (9, 'it001', 'เงินเดือน/ค่าจ้าง/ค่าตอบแทน', 1, 1, 8, 1, 1, 1, 5, 5, 15, 3, '2026-06-01', '2026-06-30', 'ความสำคัญ หลักการและเหตุผล *', 'วัตถุประสงค์ของโครงการ *', 'กลุ่มเป้าหมาย *', 'ตัวชี้วัดโครงการ', 'ผลผลิตโครงการ (Outputs)', 'pending', '2026-06-19 02:35:12', '2026-06-19 03:19:12');
-INSERT INTO `plan_projects` VALUES (10, 'it002', '7.1ข(2) ผลลัพธ์ด้านความปลอดภัยและการเตรียมพร้อมต่อภาวะฉุกเฉิน', 1, 1, 8, 1, 2, 2, 1, 1, 1, 1, '2026-06-01', '2026-06-30', NULL, NULL, NULL, NULL, NULL, 'pending', '2026-06-22 06:27:24', '2026-06-22 06:27:40');
+INSERT INTO `plan_projects` VALUES (12, 'LAW-001', 'โครงการขับเคลื่อน ITA', 1, 2, 5, 1, 1, 1, NULL, NULL, NULL, NULL, '2026-07-01', '2026-07-31', '1. ความสำคัญ หลักการและเหตุผล *', '2. วัตถุประสงค์ของโครงการ *', '3. กลุ่มเป้าหมาย *', '4. ตัวชี้วัดโครงการ', '5. ผลผลิตโครงการ (Outputs)', 'completed', '2026-07-12 06:13:50', '2026-07-24 03:25:27');
+INSERT INTO `plan_projects` VALUES (13, 'ท.3', 'พัฒนาระบบสนเทศ', 1, 1, 8, 1, 1, 1, NULL, NULL, NULL, NULL, '2026-07-01', '2026-07-31', NULL, NULL, NULL, NULL, NULL, 'pending', '2026-07-19 07:02:52', '2026-07-19 07:02:52');
+INSERT INTO `plan_projects` VALUES (14, 'LAW-002', 'โครงการที่ 2', 1, 2, 5, 1, 1, 1, NULL, NULL, NULL, NULL, '2026-07-01', '2026-07-31', NULL, NULL, NULL, NULL, NULL, 'pending', '2026-07-23 13:38:06', '2026-07-23 13:38:06');
 
 -- ----------------------------
 -- Table structure for plan_strategic_issues
@@ -645,7 +729,7 @@ CREATE TABLE `plan_strategies`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `goal_id`(`goal_id` ASC) USING BTREE,
   CONSTRAINT `plan_strategies_ibfk_1` FOREIGN KEY (`goal_id`) REFERENCES `plan_goals` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of plan_strategies
@@ -653,60 +737,43 @@ CREATE TABLE `plan_strategies`  (
 INSERT INTO `plan_strategies` VALUES (1, 1, NULL, 'กลยุทธ์ 1.1 พัฒนาหลักสูตรการศึกษาด้านสุขภาพปฐมภูมิตามมาตรฐานสากล', 'active', '2026-06-07 07:27:57', '2026-06-07 07:27:57');
 INSERT INTO `plan_strategies` VALUES (2, 1, '-', 'กลยุทธ์ 1.2 สร้าง/พัฒนารูปแบบการจัดการศึกษาด้านสุขภาพปฐมภูมิ', 'active', '2026-06-07 07:28:18', '2026-06-07 07:28:18');
 INSERT INTO `plan_strategies` VALUES (3, 15, 'S4', '-', 'active', '2026-06-19 02:38:10', '2026-06-19 02:38:10');
+INSERT INTO `plan_strategies` VALUES (4, 4, 'KPI 7.1ก-01', 'c', 'active', '2026-07-12 07:12:19', '2026-07-12 07:12:19');
 
 -- ----------------------------
--- Table structure for plan_sub_activity_budgets
+-- Table structure for project_strategies
 -- ----------------------------
-DROP TABLE IF EXISTS `plan_sub_activity_budgets`;
-CREATE TABLE `plan_sub_activity_budgets`  (
+DROP TABLE IF EXISTS `project_strategies`;
+CREATE TABLE `project_strategies`  (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `sub_activity_id` bigint UNSIGNED NOT NULL,
-  `activity_budget_id` bigint UNSIGNED NOT NULL,
-  `allocated_amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
-  `pr_amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
-  `pr_approved_date` date NULL DEFAULT NULL,
-  `po_amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
-  `po_signed_date` date NULL DEFAULT NULL,
+  `project_id` bigint UNSIGNED NOT NULL,
+  `mission_id` bigint UNSIGNED NOT NULL,
+  `strategic_issue_id` bigint UNSIGNED NOT NULL,
+  `goal_id` bigint UNSIGNED NOT NULL,
+  `strategy_id` bigint UNSIGNED NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `sub_activity_id`(`sub_activity_id` ASC) USING BTREE,
-  INDEX `activity_budget_id`(`activity_budget_id` ASC) USING BTREE,
-  CONSTRAINT `plan_sub_activity_budgets_ibfk_1` FOREIGN KEY (`sub_activity_id`) REFERENCES `plan_project_sub_activities` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `plan_sub_activity_budgets_ibfk_2` FOREIGN KEY (`activity_budget_id`) REFERENCES `plan_activity_budgets` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+  INDEX `fk_ps_project`(`project_id` ASC) USING BTREE,
+  INDEX `fk_ps_mission`(`mission_id` ASC) USING BTREE,
+  INDEX `fk_ps_strategic_issue`(`strategic_issue_id` ASC) USING BTREE,
+  INDEX `fk_ps_goal`(`goal_id` ASC) USING BTREE,
+  INDEX `fk_ps_strategy`(`strategy_id` ASC) USING BTREE,
+  CONSTRAINT `fk_ps_goal` FOREIGN KEY (`goal_id`) REFERENCES `plan_goals` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_ps_mission` FOREIGN KEY (`mission_id`) REFERENCES `plan_missions` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_ps_project` FOREIGN KEY (`project_id`) REFERENCES `plan_projects` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `fk_ps_strategic_issue` FOREIGN KEY (`strategic_issue_id`) REFERENCES `plan_strategic_issues` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `fk_ps_strategy` FOREIGN KEY (`strategy_id`) REFERENCES `plan_strategies` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Records of plan_sub_activity_budgets
+-- Records of project_strategies
 -- ----------------------------
-INSERT INTO `plan_sub_activity_budgets` VALUES (1, 2, 14, 3000.00, 0.00, NULL, 0.00, NULL, '2026-06-22 03:35:53', '2026-06-22 03:35:53');
-
--- ----------------------------
--- Table structure for plan_sub_activity_payments
--- ----------------------------
-DROP TABLE IF EXISTS `plan_sub_activity_payments`;
-CREATE TABLE `plan_sub_activity_payments`  (
-  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-  `sub_activity_budget_id` bigint UNSIGNED NOT NULL,
-  `amount` decimal(15, 2) NOT NULL DEFAULT 0.00,
-  `payment_date` date NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'pending',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `sub_activity_budget_id`(`sub_activity_budget_id` ASC) USING BTREE,
-  CONSTRAINT `plan_sub_activity_payments_ibfk_1` FOREIGN KEY (`sub_activity_budget_id`) REFERENCES `plan_sub_activity_budgets` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
-
--- ----------------------------
--- Records of plan_sub_activity_payments
--- ----------------------------
-INSERT INTO `plan_sub_activity_payments` VALUES (1, 1, 1111.00, '2026-06-22', NULL, 'pending', '2026-06-22 06:02:10', '2026-06-22 06:02:10');
-INSERT INTO `plan_sub_activity_payments` VALUES (2, 1, 800.00, '2026-06-22', NULL, 'pending', '2026-06-22 06:05:57', '2026-06-22 06:05:57');
-INSERT INTO `plan_sub_activity_payments` VALUES (3, 1, 500.00, '2026-06-22', NULL, 'pending', '2026-06-22 06:19:12', '2026-06-22 06:19:12');
-INSERT INTO `plan_sub_activity_payments` VALUES (4, 1, 500.00, '2026-06-22', NULL, 'pending', '2026-06-22 06:20:04', '2026-06-22 06:20:04');
-INSERT INTO `plan_sub_activity_payments` VALUES (5, 1, 80.00, '2026-06-22', NULL, 'pending', '2026-06-22 06:21:17', '2026-06-22 06:21:17');
+INSERT INTO `project_strategies` VALUES (8, 12, 1, 1, 1, 1, '2026-07-12 07:48:08', '2026-07-12 07:48:08');
+INSERT INTO `project_strategies` VALUES (9, 12, 5, 5, 15, 3, '2026-07-12 07:48:08', '2026-07-12 07:48:08');
+INSERT INTO `project_strategies` VALUES (10, 13, 2, 2, 4, 4, '2026-07-19 07:02:57', '2026-07-19 07:02:57');
+INSERT INTO `project_strategies` VALUES (11, 13, 5, 5, 15, 3, '2026-07-19 07:02:57', '2026-07-19 07:02:57');
+INSERT INTO `project_strategies` VALUES (12, 14, 1, 1, 1, 1, '2026-07-23 13:38:12', '2026-07-23 13:38:12');
+INSERT INTO `project_strategies` VALUES (13, 14, 1, 1, 1, 2, '2026-07-23 13:38:12', '2026-07-23 13:38:12');
 
 -- ----------------------------
 -- Table structure for role_has_permissions
@@ -767,8 +834,10 @@ CREATE TABLE `sessions`  (
 -- ----------------------------
 -- Records of sessions
 -- ----------------------------
-INSERT INTO `sessions` VALUES ('5zvDbVistTDqG0h4hbH9P4nfMQGD8Oh8xSoPCQVs', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJ5eExJVkQwZEQ2QVFxNHplR3RiOW5ldWl5MkJkQTYwQVBSa3M0b3VqIiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjIsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMFwvcGxhblwvcHJvamVjdHNcL2NyZWF0ZSIsInJvdXRlIjpudWxsfSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1783822305);
-INSERT INTO `sessions` VALUES ('lSHzpJEW8lbJ0SloXbDLuUhZRub34XaO9zUletI1', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiIwV2poYmZFSGQ5UTBtSlB0V1BnR3V5Rm8xVnVrYWZGOHRTT005c29GIiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMCIsInJvdXRlIjpudWxsfSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1783826699);
+INSERT INTO `sessions` VALUES ('Hgfsv84grUlT5oosVeMJRpTwAoqIadZbZNn26fHy', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdlRKRTBmbjJWSjREZllVTHBlejRTNnRIdzFXNk56OFR1ald0T3IyIiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjIsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMFwvcGxhblwvcHJvamVjdHNcLzEyXC9lZGl0P3RhYj1nZW5lcmFsIiwicm91dGUiOiJwbGFuLnByb2plY3RzLmVkaXQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1784866555);
+INSERT INTO `sessions` VALUES ('ORvK48tmBQB9FScrksBpSCxOYqohlnY89iVTEUUK', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJQNGVQc241RUU5SXc4MzcySXlXVTlwc09WSjBpMlpJVE5sRUROeFRCIiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMCIsInJvdXRlIjpudWxsfSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1784861142);
+INSERT INTO `sessions` VALUES ('Shtf1vT040dIWHMgt0wmKn2xefSthN8JBoJno9kW', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJsc1NVdzhTM0N1aW1FZG9HcDBQdUh2dnRxb05OaWxaVktBOTZKOXA1IiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMFwvcGxhblwvcmVwb3J0c1wvcHJvamVjdC1zdW1tYXJ5XC9leHBvcnQtZXhjZWwiLCJyb3V0ZSI6InBsYW4ucmVwb3J0cy5wcm9qZWN0X3N1bW1hcnkuZXhwb3J0LmV4Y2VsIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=', 1784877510);
+INSERT INTO `sessions` VALUES ('WvBCgb39zNvUsIfYt8udkA0ERDivzcMZ4nWwUzAG', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJaR2ZYTEx0OG54Z3NndUNtZEZmOG9uQU93OE04YjdUaVV3MUR3ZWVZIiwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC9sb2NhbGhvc3Q6ODAwMFwvcGxhblwvcmVwb3J0c1wvcHJvamVjdC1zdW1tYXJ5P2Zpc2NhbF95ZWFyX2lkPTEmcGFyZW50X2RlcGFydG1lbnRfaWQ9MSIsInJvdXRlIjoicGxhbi5yZXBvcnRzLnByb2plY3Rfc3VtbWFyeSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19', 1784868012);
 
 -- ----------------------------
 -- Table structure for units
@@ -780,7 +849,7 @@ CREATE TABLE `units`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of units
@@ -839,7 +908,7 @@ CREATE TABLE `vendors`  (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of vendors

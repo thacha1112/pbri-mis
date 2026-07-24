@@ -125,5 +125,10 @@ class Project extends Model
             'id'                                           // PK ของ Activity
         );
     }
+
+    public function selectedStrategies()
+    {
+        return $this->hasMany(ProjectStrategy::class);
+    }
     
 }

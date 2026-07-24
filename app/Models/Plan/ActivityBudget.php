@@ -29,10 +29,13 @@ class ActivityBudget extends Model
         return $this->belongsTo(BudgetSource::class, 'project_budget_source_id');
     }
 
-    // เพิ่มฟังก์ชันสำหรับดึงกิจกรรมย่อยด้วย เพื่อให้ใช้ $budget->subActivityBudgets ได้
-    public function subActivityBudgets()
-    {
-        return $this->hasMany(SubActivityBudget::class, 'activity_budget_id');
+    
+
+    // โยงไปยังตารางเบิกจ่ายตัวใหม่
+    public function payments() {
+        return $this->hasMany(ActivityPayment::class, 'activity_budget_id', 'id');
     }
+
+  
     
 }

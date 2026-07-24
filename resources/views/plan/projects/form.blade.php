@@ -8,34 +8,66 @@
 {{-- 1. สร้างตัวแปรระบุ Tab ปัจจุบัน (จาก URL query string หรือ default คือ general) --}}
 @php $activeTab = request()->get('tab', 'general'); @endphp
 <ul class="nav nav-tabs border-bottom-0 custom-project-tabs" id="projectTab" role="tablist">
-   @foreach(['general' => 'ข้อมูลทั่วไป', 'alignment' => 'ความสอดคล้องพันธกิจ', 'details' => 'รายละเอียดโครงการ', 'budget' => 'แหล่งเงินโครงการ', 'activities' => 'แผนกิจกรรม & เบิกจ่าย'] as $key => $label)
-    <li class="nav-item">
-        <a class="nav-link fw-bold {{ $activeTab == $key ? 'active' : '' }} {{ (!$isEdit && $key != 'general') ? 'disabled' : '' }}" 
-               onclick="window.location.href='{{ url('plan/projects', [$project->id ?? 0]) }}/edit?tab={{ $key }}'"
-                type="button">
-            {{ $label }}
-        </a>
-    </li>
+    @foreach(['general' => 'บันทึกโครงการ', 'alignment' => 'พันธกิจ', 'details' => 'รายละเอียดโครงการ', 'budget' => 'งปม.ที่ได้รับจัดสรรลงโครงการ', 'activities' => 'บันทึกกิจกรรม'] as $key => $label)
+        @php
+            // เช็คว่ามี ID หรือไม่
+            $hasId = ($project && $project->id);
+            $isDisabled = !$hasId
+        @endphp
+        
+        <li class="nav-item">
+            <a class="nav-link fw-bold {{ $activeTab == $key ? 'active' : '' }} {{ $isDisabled ? 'disabled text-muted' : '' }}" 
+            @if($isDisabled)
+                style="cursor: not-allowed; opacity: 0.6; pointer-events: none;"
+            @else
+                
+                onclick="window.location.href='{{ url('plan/projects', [$project->id]) }}/edit?tab={{ $key }}'"
+                style="cursor: pointer;"
+            @endif
+            role="button">
+                {{ $label }}
+            </a>
+        </li>
     @endforeach
 </ul>
 
 <div class="tab-content card border-0 shadow-sm p-4 bg-white rounded-bottom" id="projectTabContent" style="border-top-left-radius: 0px !important;">
+  
+    {{-- แสดงข้อความ Success --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-check-circle me-2"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
+    {{-- แสดงข้อความ Error (รวมถึง validation error ต่างๆ) --}}
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <div class="tab-pane fade {{ $activeTab == 'general' ? 'show active' : '' }}" id="general-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
-        <form id="generalForm">
+        <form id="generalForm" action="{{ $isEdit ? route('plan.projects.update', $project->id) : route('plan.projects.store') }}" method="POST">
             @csrf
             @if($isEdit)
-            @method('PUT')
+                @method('PUT')
             @endif
+            <input type="hidden" name="redirect_tab" value="alignment">
 
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label fw-bold">รหัสโครงการ <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control font-mono fw-bold" id="project_code" name="project_code" value="{{ $project->project_code }}" placeholder="เช่น PRJ69001" required>
+                    <input type="text" class="form-control font-mono fw-bold" id="project_code" name="project_code" value="{{ old('project_code', $project->project_code) }}" placeholder="เช่น PRJ69001" required>
                 </div>
                 <div class="col-md-8 mb-3">
                     <label class="form-label fw-bold">ชื่อโครงการยุทธศาสตร์ / แผนงานอนุมัติ <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control fw-bold text-dark" id="name" name="name" value="{{ $project->name }}" placeholder="ระบุชื่อโครงการเต็มใบด้านบน" required>
+                    <input type="text" class="form-control fw-bold text-dark" id="name" name="name" value="{{ old('name', $project->name) }}" placeholder="ระบุชื่อโครงการเต็มใบด้านบน" required>
                 </div>
             </div>
 
@@ -45,7 +77,7 @@
                     <select class="form-select select2-setup" id="fiscal_year_id" name="fiscal_year_id" required>
                         <option value="">-- เลือกปีงบประมาณ --</option>
                         @foreach($fiscalYears as $y)
-                        <option value="{{ $y->id }}" {{ $project->fiscal_year_id == $y->id ? 'selected' : '' }}>ปี พ.ศ. {{ $y->year }}</option>
+                        <option value="{{ $y->id }}" {{ old('fiscal_year_id', $project->fiscal_year_id) == $y->id ? 'selected' : '' }}>ปี พ.ศ. {{ $y->year }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -54,7 +86,7 @@
                     <select class="form-select select2-setup" id="department_id" name="department_id" required>
                         <option value="">-- เลือกกอง/คณะ/สังกัด --</option>
                         @foreach($departments as $d)
-                        <option value="{{ $d->id }}" {{ $project->department_id == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                        <option value="{{ $d->id }}" {{ old('department_id', $project->department_id) == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -63,7 +95,7 @@
                     <select class="form-select select2-setup" id="personnel_id" name="personnel_id" required>
                         <option value="">-- เลือกเจ้าหน้าที่ผู้รับผิดชอบ --</option>
                         @foreach($personnels as $p)
-                        <option value="{{ $p->id }}" {{ $project->personnel_id == $p->id ? 'selected' : '' }}>
+                        <option value="{{ $p->id }}" {{ old('personnel_id', $project->personnel_id) == $p->id ? 'selected' : '' }}>
                             {{ $p->name ?? ($p->firstname . " " . $p->lastname) }}
                         </option>
                         @endforeach
@@ -77,23 +109,25 @@
                     <select class="form-select select2-setup" id="project_method_id" name="project_method_id" required>
                         <option value="">-- เลือกประเภทวิธีดำเนินการ --</option>
                         @foreach($projectMethods as $pm)
-                        <option value="{{ $pm->id }}" {{ $project->project_method_id == $pm->id ? 'selected' : '' }}>{{ $pm->name }}</option>
+                            <option value="{{ $pm->id }}" {{ old('project_method_id', $project->project_method_id) == $pm->id ? 'selected' : '' }}>{{ $pm->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label fw-bold">มิติครุภัณฑ์สิ่งก่อสร้าง <span class="text-danger">*</span></label>
                     <select class="form-select select2-setup" id="construction_type_id" name="construction_type_id" required>
+                        <option value="">-- เลือกมิติครุภัณฑ์ --</option>
                         @foreach($constructionTypes as $ct)
-                        <option value="{{ $ct->id }}" {{ $project->construction_type_id == $ct->id ? 'selected' : '' }}>{{ $ct->name }}</option>
+                            <option value="{{ $ct->id }}" {{ old('construction_type_id', $project->construction_type_id) == $ct->id ? 'selected' : '' }}>{{ $ct->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label fw-bold">มิติการเดินทางไปต่างประเทศ <span class="text-danger">*</span></label>
                     <select class="form-select select2-setup" id="overseas_type_id" name="overseas_type_id" required>
+                        <option value="">-- เลือกมิติการเดินทาง --</option>
                         @foreach($overseasTypes as $ot)
-                        <option value="{{ $ot->id }}" {{ $project->overseas_type_id == $ot->id ? 'selected' : '' }}>{{ $ot->name }}</option>
+                            <option value="{{ $ot->id }}" {{ old('overseas_type_id', $project->overseas_type_id) == $ot->id ? 'selected' : '' }}>{{ $ot->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -104,15 +138,41 @@
                     <label class="form-label fw-bold">ระยะเวลาเริ่มต้นโครงการ <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-calendar-days"></i></span>
-                        <input type="text" class="form-control fw-semibold th-datepicker" id="start_date" name="start_date" placeholder="วว/ดด/ปปปป" autocomplete="off" required>
+                        <input type="text" 
+                            class="form-control fw-semibold th-datepicker" 
+                            id="start_date" 
+                            name="start_date" 
+                            value="{{ \App\Helpers\DateHelper::toThaiDate(old('start_date', $project->start_date)) }}" 
+                            placeholder="วว/ดด/ปปปป" 
+                            autocomplete="off" 
+                            required>
                     </div>
                 </div>
                 <div class="col-md-6 mb-4">
                     <label class="form-label fw-bold">ระยะเวลาสิ้นสุดโครงการ <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-calendar-days"></i></span>
-                        <input type="text" class="form-control fw-semibold th-datepicker" id="end_date" name="end_date" placeholder="วว/ดด/ปปปป" autocomplete="off" required>
+                        <input type="text" 
+                            class="form-control fw-semibold th-datepicker" 
+                            id="end_date" 
+                            name="end_date" 
+                            value="{{ \App\Helpers\DateHelper::toThaiDate(old('end_date', $project->end_date)) }}" 
+                            placeholder="วว/ดด/ปปปป" 
+                            autocomplete="off" 
+                            required>
                     </div>
+                </div>
+            </div>
+            <!-- 🟢 เพิ่มฟิลด์สถานะโครงการในข้อมูลทั่วไป -->
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">สถานะโครงการ <span class="text-danger">*</span></label>
+                    <select class="form-select select2-setup" id="status" name="status" required>
+                        <option value="pending" {{ old('status', $project->status) == 'pending' ? 'selected' : '' }}>รอดำเนินการ (Pending)</option>
+                        <option value="inprogress" {{ old('status', $project->status) == 'inprogress' ? 'selected' : '' }}>กำลังดำเนินการ (In Progress)</option>
+                        <option value="completed" {{ old('status', $project->status) == 'completed' ? 'selected' : '' }}>เสร็จสิ้น (Completed)</option>
+                        <option value="cancelled" {{ old('status', $project->status) == 'cancelled' ? 'selected' : '' }}>ยกเลิก (Cancelled)</option>
+                    </select>
                 </div>
             </div>
 
@@ -158,7 +218,7 @@
             </div>
         @endif
     </div>
-    
+
    {{-- Tab กิจกรรม --}}
     <div class="tab-pane fade {{ $activeTab == 'activities' ? 'show active' : '' }}" id="activities-pane" role="tabpanel" aria-labelledby="activities-tab" tabindex="0">
           @if($isEdit)
@@ -185,65 +245,45 @@
     $(document).ready(function() {
         $('.select2-setup').select2({ theme: 'bootstrap-5', width: '100%' });
 
-        // 1. ดักรับค่าดิบ ค.ศ. ผ่านแผงคุมภายนอก
-        let rawStartDate = $('#project-date-binding').attr('data-start-raw');
-        let rawEndDate = $('#project-date-binding').attr('data-end-raw');
+       
 
-        // 2. 🔥 ประกาศคำสั่งเปิดปฏิทินไทย พ.ศ. ลงบนอินพุตที่มีคลาส .th-datepicker โดยตรง
+        // 1. ตั้งค่า Datepicker
         $('.th-datepicker').datepicker({
             format: 'dd/mm/yyyy',
             language: 'th',
-            thaiyear: true, // คำนวณ ปี ค.ศ. เป็น พ.ศ. ในหน้ากากสกินให้อัตโนมัติ
+            thaiyear: true,
             autoclose: true,
             todayHighlight: true
         });
 
-        // 3. ปรับค่าอัปเดตวันที่เดิมในฐานข้อมูล (ถ้ามี)
-        if (rawStartDate) {
-            let dateObj = new Date(rawStartDate);
-            $('#start_date').datepicker('update', dateObj);
-        }
-        if (rawEndDate) {
-            let dateObj = new Date(rawEndDate);
-            $('#end_date').datepicker('update', dateObj);
-        }
+        // 2. ฟังก์ชันช่วยปรับค่าจาก ค.ศ. (Y-m-d) เป็น พ.ศ. (dd/mm/yyyy)
+        $('.th-datepicker').each(function() {
+            let val = $(this).val();
+            if (val && val.includes('-')) {
+                let parts = val.split('-'); // ยึดตาม format Y-m-d
+                if(parts.length === 3) {
+                    let year = parseInt(parts[0]) + 543; // แปลง ค.ศ. -> พ.ศ.
+                    let thaiDate = `${parts[2]}/${parts[1]}/${year}`;
+                    $(this).val(thaiDate);
+                    $(this).datepicker('update', thaiDate);
+                }
+            }
+        });
 
         // ================= สคริปต์ประมวลผลเซฟข้อมูล Tabที่ 1 ผ่าน AJAX =================
-        $('#generalForm').on('submit', function(e) {
-            e.preventDefault();
-            let url = isEditModeGlobal ? `{{ url('plan/projects') }}/${currentProjectId}` : `{{ url('plan/projects') }}`;
-            
-            // แปลงค่า พ.ศ. กลับไปเป็น ค.ศ. สำหรับจัดเก็บลง MySQL
+        $('#generalForm').on('submit', function() {
             let sDate = $('#start_date').datepicker('getDate');
             let eDate = $('#end_date').datepicker('getDate');
-            let dataArray = $(this).serializeArray();
             
             if (sDate) {
-                let formattedSDate = sDate.getFullYear() + '-' + String(sDate.getMonth() + 1).padStart(2, '0') + '-' + String(sDate.getDate()).padStart(2, '0');
-                $.each(dataArray, function() { if (this.name === 'start_date') this.value = formattedSDate; });
+                let formatted = sDate.getFullYear() + '-' + String(sDate.getMonth() + 1).padStart(2, '0') + '-' + String(sDate.getDate()).padStart(2, '0');
+                $('<input>').attr({type: 'hidden', name: 'start_date_formatted', value: formatted}).appendTo('#generalForm');
             }
             if (eDate) {
-                let formattedEDate = eDate.getFullYear() + '-' + String(eDate.getMonth() + 1).padStart(2, '0') + '-' + String(eDate.getDate()).padStart(2, '0');
-                $.each(dataArray, function() { if (this.name === 'end_date') this.value = formattedEDate; });
+                let formatted = eDate.getFullYear() + '-' + String(eDate.getMonth() + 1).padStart(2, '0') + '-' + String(eDate.getDate()).padStart(2, '0');
+                $('<input>').attr({type: 'hidden', name: 'end_date_formatted', value: formatted}).appendTo('#generalForm');
             }
-
-            $.ajax({
-                url: url, type: 'POST', data: $.param(dataArray),
-                success: function(res) {
-                    if (!isEditModeGlobal && res.project_id) {
-                        Swal.fire({ icon: 'success', title: res.message, showConfirmButton: true, confirmButtonText: 'ดำเนินการต่อ' })
-                        .then(() => { window.location.href = `{{ url('plan/projects') }}/${res.project_id}/edit`; });
-                    } else {
-                        Swal.fire({ icon: 'success', title: res.message, showConfirmButton: false, timer: 1300 });
-                    }
-                },
-                error: function(err) {
-                    let errors = err.responseJSON?.errors;
-                    let message = 'ตรวจสอบความถูกต้องของฟิลด์ข้อมูลใหม่อีกครั้ง';
-                    if (errors && errors.project_code) { message = 'รหัสโครงการนี้ถูกใช้ในระบบงบประมาณไปเรียบร้อยแล้ว'; }
-                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด!', text: message });
-                }
-            });
+            return true; // ยอมให้ Submit
         });
     });
 </script>

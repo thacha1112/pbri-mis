@@ -17,11 +17,15 @@ use App\Http\Controllers\Plan\BudgetSourceController;
 use App\Http\Controllers\Plan\ProgramController;
 use App\Http\Controllers\Plan\BudgetCategoryController;
 use App\Http\Controllers\Plan\ProjectController;
-use App\Http\Controllers\Plan\SubActivityController;
 
 use App\Http\Controllers\Ums\RoleController;
 use App\Http\Controllers\Ums\PermissionController;
 use App\Http\Controllers\Ums\UserRoleController;
+use App\Http\Controllers\Plan\DepartmentAllocationController;
+
+use App\Http\Controllers\Plan\DisbursementController;
+
+use App\Http\Controllers\Plan\ProjectReportController;
 
 
 
@@ -87,39 +91,66 @@ Route::middleware(['checklogin'])->group(function () {
         Route::resource('budget-sources', BudgetSourceController::class)->except(['create', 'edit', 'show']);
         Route::resource('programs', ProgramController::class)->except(['create', 'edit', 'show']);
         Route::resource('budget-categories', BudgetCategoryController::class)->except(['create', 'edit', 'show']);
-
-        // 📁 เส้นทางเพิ่มใหม่: ระบบบริหารจัดทำโครงการและแผนคลังงบประมาณรายปี
-    // แทนที่ Route::resource บรรทัดเดียวด้วยชุดนี้ครับ
-        Route::get('projects', [App\Http\Controllers\Plan\ProjectController::class, 'index']);
-        Route::get('projects/create', [App\Http\Controllers\Plan\ProjectController::class, 'create']);
-        Route::post('projects', [App\Http\Controllers\Plan\ProjectController::class, 'store']);
-        Route::get('projects/{id}/edit', [App\Http\Controllers\Plan\ProjectController::class, 'edit']);
-        Route::put('projects/{id}', [App\Http\Controllers\Plan\ProjectController::class, 'update']);
-        Route::delete('projects/{id}', [App\Http\Controllers\Plan\ProjectController::class, 'destroy']);
-
-        // Route เสริมที่คุณมีอยู่แล้ว
-        Route::post('projects/{id}/update-alignment', [App\Http\Controllers\Plan\ProjectController::class, 'updateAlignment']);
-        Route::post('projects/{id}/update-details', [App\Http\Controllers\Plan\ProjectController::class, 'updateDetails']);
-        Route::post('projects/{id}/update-budget', [App\Http\Controllers\Plan\ProjectController::class, 'updateBudget']);
-        Route::post('projects/{id}/update-activities', [App\Http\Controllers\Plan\ProjectController::class, 'updateActivities']);
-        Route::get('projects/activity-form/{id?}', [App\Http\Controllers\Plan\ProjectController::class, 'getActivityForm']);
-        Route::delete('projects/activities/{id}', [App\Http\Controllers\Plan\ProjectController::class, 'destroyActivity']);
         
-        // แนะนำ: ใช้ sub-activities นำหน้ากิจกรรมหลักเพื่อให้เรียกใช้ง่ายขึ้น
-        Route::get('sub-activities/form/{activityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'getSubActivityForm']);
-        //Route::post('sub-activities/store/{activityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'store']);
-        Route::get('sub-activities/list/{activityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'getSubActivities']);
-        Route::get('payments/form/{subActivityBudgetId}', [App\Http\Controllers\Plan\SubActivityController::class, 'getPaymentForm']);
-        Route::post('sub-activities/cancel-payment/{subActivityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'cancelPayment']);
-        Route::post('sub-activities/payments/{subActivityBudgetId}', [App\Http\Controllers\Plan\SubActivityController::class, 'storePayment']);
+        Route::resource('department-allocations', DepartmentAllocationController::class);
+        Route::get('get-data-by-year/{fyId}', [DepartmentAllocationController::class, 'getDataByYear']);
+        // 1. API สำหรับ Cascade Dropdown (วางไว้ก่อน Resource)
+        Route::get('get-sources-by-year/{fyId}', [\App\Http\Controllers\Plan\DepartmentAllocationController::class, 'getSourcesByYear']);
+        Route::get('get-programs-by-source/{sourceId}', [\App\Http\Controllers\Plan\DepartmentAllocationController::class, 'getProgramsBySource']);
+        Route::get('get-categories-by-program/{programId}', [\App\Http\Controllers\Plan\DepartmentAllocationController::class, 'getCategoriesByProgram']);
+        
+        // 📁 เส้นทางเพิ่มใหม่: ระบบบริหารจัดทำโครงการและแผนคลังงบประมาณรายปี
+        // แทนที่ Route::resource บรรทัดเดียวด้วยชุดนี้ครับ
+        // 1. Route สำหรับ Projects (ใช้ resource ให้เป็นประโยชน์)
+        Route::resource('projects', App\Http\Controllers\Plan\ProjectController::class)
+            ->names('plan.projects')
+            ->except(['show']);
+
+        // 2. Route เสริมของ Project (ที่ไม่ได้อยู่ในมาตรฐาน Resource)
+        Route::prefix('projects')->name('plan.projects.')->group(function () {
+            Route::post('{id}/update-alignment', [App\Http\Controllers\Plan\ProjectController::class, 'updateAlignment'])->name('update-alignment');
+            Route::post('{id}/update-details', [App\Http\Controllers\Plan\ProjectController::class, 'updateDetails'])->name('update-details');
+            Route::post('{id}/update-budget', [App\Http\Controllers\Plan\ProjectController::class, 'updateBudget'])->name('update-budget');
+            Route::post('{id}/update-activities', [App\Http\Controllers\Plan\ProjectController::class, 'updateActivities'])->name('update-activities');
+            Route::get('activity-form/{id?}', [App\Http\Controllers\Plan\ProjectController::class, 'getActivityForm'])->name('activity-form');
+            Route::delete('activities/{id}', [App\Http\Controllers\Plan\ProjectController::class, 'destroyActivity'])->name('destroy-activity');
+            // 🟢 เพิ่ม Route ใหม่ตรงนี้ สำหรับดึงสรุปงบประมาณ
+            Route::get('{projectId}/budget-summary', [App\Http\Controllers\Plan\ProjectController::class, 'getProjectBudgetSummary']);
+        });
+
+       
+
+
+        Route::resource('disbursements', DisbursementController::class)
+            ->names('plan.disbursements')
+            ->only(['index', 'show']);
+
+        // 🟢 กลุ่มรายงานแผนงาน
+        Route::prefix('reports')->name('plan.reports.')->group(function () {
+            Route::get('/project-summary', [ProjectReportController::class, 'index'])->name('project_summary');
+            Route::get('/project-summary/export-excel', [ProjectReportController::class, 'exportExcel'])->name('project_summary.export.excel');
+        });
+
     });
 
-    // วางไว้นอก Group prefix 'plan' ชั่วคราวเพื่อเช็คปัญหา
-    Route::post('api/sub-activities/store/{activityId}', [App\Http\Controllers\Plan\SubActivityController::class, 'store']);
+        // 🟢 4. ระบบเบิกจ่ายงบประมาณ (Disbursements Module)
+        /*Route::resource('disbursements', DisbursementController::class)
+            ->names('plan.disbursements')
+            ->only(['index', 'show']);*/
+
+        Route::prefix('disbursements')->name('plan.disbursements.')->group(function () {
+            Route::post('payments', [DisbursementController::class, 'storePayment'])->name('payments.store');
+            Route::delete('payments/{id}', [DisbursementController::class, 'destroyPayment'])->name('payments.destroy');
+        });
+
+       
+
+   
 
     Route::prefix('ums')->group(function () {
         Route::resource('roles', RoleController::class);
         Route::resource('user-roles', UserRoleController::class)->only(['index', 'edit', 'update']);
     });
+
 
 });

@@ -11,8 +11,24 @@ class BudgetCategoryController extends Controller
 {
     public function index()
     {
-        $categories = BudgetCategory::with('program.budgetSource')->orderBy('id', 'desc')->get();
-        $programs = Program::with('budgetSource')->where('status', 'active')->get(); // ดึงไปกรองในกล่องป๊อปอัพ
+        // ดึงหมวดงบรายจ่าย พร้อมเรียงตามปีงบประมาณจากมากไปน้อย
+        $categories = BudgetCategory::with(['program.budgetSource.fiscalYear'])
+            ->join('plan_programs', 'plan_budget_categories.program_id', '=', 'plan_programs.id')
+            ->join('plan_budget_sources', 'plan_programs.budget_source_id', '=', 'plan_budget_sources.id')
+            ->join('fiscal_years', 'plan_budget_sources.fiscal_year_id', '=', 'fiscal_years.id')
+            ->orderBy('fiscal_years.year', 'desc') // เรียงปีงบประมาณมากไปน้อย
+            ->orderBy('plan_budget_categories.id', 'asc') // เรียง ID หมวดงบเป็นลำดับรอง
+            ->select('plan_budget_categories.*') // เลือกเฉพาะข้อมูลจากตารางหมวดงบ
+            ->get();
+
+        // ดึงแผนงาน (Programs) ที่ใช้งานอยู่ เพื่อใช้ใน Select Modal
+        $programs = Program::with('budgetSource.fiscalYear')
+            ->where('status', 'active')
+            ->get()
+            ->sortByDesc(function($program) {
+                return $program->budgetSource->fiscalYear->year;
+            });
+
         return view('plan.budget_categories.index', compact('categories', 'programs'));
     }
 

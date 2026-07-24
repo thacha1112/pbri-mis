@@ -8,10 +8,25 @@ use App\Models\Common\Department;
 
 class DepartmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $departments = Department::with('parent')->orderBy('id', 'desc')->get();
-        $parentDepartments = Department::whereNull('parent_id')->where('status', 'active')->get(); // สำหรับดึงไปเลือกหน่วยงานหลัก
+        $query = Department::with('parent', 'children');
+
+        // 🟢 ตรวจสอบว่ามีการเลือกฟิลเตอร์หน่วยงานสูงสุดหรือไม่
+        if ($request->has('parent_id') && $request->parent_id != 'all' && $request->parent_id != '') {
+            $parentId = $request->parent_id;
+            // ดึงเฉพาะหน่วยงานสูงสุดที่เลือก และหน่วยงานย่อยที่มี parent_id ตรงกัน
+            $query->where(function($q) use ($parentId) {
+                $q->where('id', $parentId)
+                  ->orWhere('parent_id', $parentId);
+            });
+        }
+
+        $departments = $query->orderBy('parent_id', 'asc')->orderBy('id', 'desc')->get();
+        
+        // สำหรับแสดงใน Dropdown ฟิลเตอร์ และ Modal
+        $parentDepartments = Department::whereNull('parent_id')->where('status', 'active')->get(); 
+
         return view('hr.departments.index', compact('departments', 'parentDepartments'));
     }
 

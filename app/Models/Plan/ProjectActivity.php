@@ -37,11 +37,7 @@ class ProjectActivity extends Model
         return $this->hasMany(ActivityBudget::class, 'activity_id');
     }
 
-    // กิจกรรมย่อยภายใต้กิจกรรมหลักนี้
-    public function subActivities(): HasMany
-    {
-        return $this->hasMany(ProjectSubActivity::class, 'activity_id');
-    }
+    
 
     // เพิ่มฟังก์ชันนี้เข้าไปครับ
     public function budgets()

@@ -12,9 +12,17 @@ class BudgetSourceController extends Controller
     public function index()
     {
         // ดึงแหล่งเงินพร้อมปีงบประมาณ
-        $sources = BudgetSource::with('fiscalYear')->orderBy('id', 'desc')->get();
-        // ดึงปีงบประมาณที่เปิดใช้งานไปใส่ใน Select Filter และ Select ใน Modal
-        $fiscalYears = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
+       $sources = BudgetSource::with('fiscalYear')
+        ->join('fiscal_years', 'plan_budget_sources.fiscal_year_id', '=', 'fiscal_years.id')
+        ->orderBy('fiscal_years.year', 'desc')
+        ->orderBy('plan_budget_sources.id', 'ASC') // เรียง ID รองลงมาเพื่อความเสถียร
+        ->select('plan_budget_sources.*') 
+        ->get();
+
+        // 2. ปีงบประมาณที่เปิดใช้งาน (เรียงตามปีจากมากไปน้อย)
+        $fiscalYears = FiscalYear::where('status', 'active')
+            ->orderBy('year', 'desc')
+            ->get();
 
         return view('plan.budget_sources.index', compact('sources', 'fiscalYears'));
     }

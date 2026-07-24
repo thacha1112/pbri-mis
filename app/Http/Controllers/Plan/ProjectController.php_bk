@@ -25,46 +25,45 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Project::with([
-            'fiscalYear',
-            'department',
-            'personnel',
-            'projectBudgetSources.budgetSource.fiscalYear',
-            'projectBudgetSources.program',
-            'projectBudgetSources.category',
-            'activities.budgets'
-        ]);
-        
+        $query = Project::query();
         $user = auth()->user();
 
         // 1. ตรวจสอบสิทธิ์: ถ้าไม่ใช่ Super Admin หรือ Admin (role 1, 2)
+        // ให้บังคับ where เฉพาะหน่วยงานของ User คนนั้น
         if (!$user->hasAnyRoleIds([1, 2])) {
+            // ดึง department_id จากตาราง personnel ของ user
             if ($user->personnal) {
                 $query->where('department_id', $user->personnal->department_id);
             } else {
+                // กรณีไม่มีข้อมูล personnel ให้กันไว้เผื่อ user ที่ไม่มีสังกัด
                 $query->whereRaw('1=0'); 
             }
         } else {
+            // 2. ถ้าเป็น Admin (มีสิทธิ์เห็นทุกหน่วย) ถึงจะยอมให้กรองด้วย Filter ได้
             if ($request->has('department_id') && $request->department_id != 'all') {
                 $query->where('department_id', $request->department_id);
             }
         }
 
-        // กรองด้วยปีงบประมาณ
+        // กรองด้วยปีงบประมาณ (ให้ใช้ได้ทุกคน)
         if ($request->has('fiscal_year_id') && $request->fiscal_year_id != 'all') {
             $query->where('fiscal_year_id', $request->fiscal_year_id);
         }
 
         $projects = $query->paginate(10)->withQueryString();
         
+        // สำหรับ Admin ให้เห็นรายชื่อหน่วยงานทั้งหมด เพื่อเลือก Filter
+        // สำหรับ User ปกติ ไม่จำเป็นต้องส่ง $departments ไปให้เห็นก็ได้ หรือจะส่งไปให้เห็นหน่วยงานตัวเองอย่างเดียวก็ได้
         $fiscalYears = FiscalYear::all();
         $departments = $user->hasAnyRoleIds([1, 2]) ? Department::all() : collect();
 
         $allocations = DepartmentAllocation::where(function($query) use($request,$user){
                 if (!$user->hasAnyRoleIds([1, 2])) {
+                // ดึง department_id จากตาราง personnel ของ user
                     if ($user->personnal) {
                         $query->where('department_id', $user->personnal->department_id);
                     } else {
+                        // กรณีไม่มีข้อมูล personnel ให้กันไว้เผื่อ user ที่ไม่มีสังกัด
                         $query->whereRaw('1=0'); 
                     }
                 }else{
@@ -83,20 +82,24 @@ class ProjectController extends Controller
      */
     public function create(Request $request)
     {
-        $user = auth()->user(); 
-        $project = new Project(); 
+        $user = auth()->user(); // ดึง User ที่ล็อกอิน
+        $project = new Project(); // ส่งก้อนโมเดลว่างเพื่อแชร์ฟอร์มร่วมกันกับโหมดแก้ไข
         $isEdit = false;
-        $activeTab = $request->get('tab', 'general'); 
+        $activeTab = $request->get('tab', 'general'); // รับค่าจาก URL
 
+        // ดึงข้อมูล Master Lookups ไปป้อนลงช่อง Select ฟิลด์ข้อมูลทั่วไป
         $fiscalYears       = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
         $projectMethods    = ProjectMethod::where('status', 'active')->get();
         $constructionTypes = ConstructionType::where('status', 'active')->get();
         $overseasTypes     = OverseasType::where('status', 'active')->get();
 
+        // 2. กรอง Department และ Personnel ตามสิทธิ์
         if ($user->hasAnyRoleIds([1, 2])) {
+            // ถ้าเป็น Admin ให้เห็นทั้งหมด
             $departments = Department::where('status', 'active')->get();
             $personnels = Personnel::where('status', 'active')->get();
         } else {
+            // ถ้าไม่ใช่ Admin ให้เห็นเฉพาะหน่วยงานตัวเอง
             $departments = Department::where('status', 'active')
                                     ->where('id', $user->personnal->department_id)
                                     ->get();
@@ -124,6 +127,10 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
+        //return $request->all();
+        
+        // 1. นำข้อมูลวันที่ที่แปลงแล้ว ไปใส่แทนที่ค่าเดิมใน $request
+       // แปลงวันที่จาก พ.ศ. (d/m/Y) เป็น ค.ศ. (Y-m-d)
         $request->merge([
             'start_date' => DateHelper::toDbDate($request->start_date),
             'end_date'   => DateHelper::toDbDate($request->end_date),
@@ -134,6 +141,7 @@ class ProjectController extends Controller
                                             'required',
                                             'string',
                                             'max:100',
+                                            // ตรวจสอบความซ้ำโดยต้องตรงทั้ง project_code และ fiscal_year_id
                                             \Illuminate\Validation\Rule::unique('plan_projects', 'project_code')
                                                 ->where('fiscal_year_id', $request->fiscal_year_id)
                                         ],
@@ -144,7 +152,6 @@ class ProjectController extends Controller
             'project_method_id'    => 'required|integer',
             'construction_type_id' => 'required|integer',
             'overseas_type_id'     => 'required|integer',
-            'status'               => 'required|string|in:pending,inprogress,completed,cancelled', // 🟢 เพิ่ม Validation สถานะ
             'start_date'           => 'required|date',
             'end_date'             => 'required|date|after_or_equal:start_date',
         ], 
@@ -152,28 +159,86 @@ class ProjectController extends Controller
             'project_code.unique' => 'รหัสโครงการนี้ถูกใช้ไปแล้วสำหรับปีงบประมาณนี้ กรุณาตรวจสอบรหัสโครงการใหม่อีกครั้ง'
         ]);
 
+        // กำหนดสิทธิ์ตั้งต้นความสอดคล้องชั้นที่ 2-4 ให้เป็น 0 ชั่วคราว (เนื่องจากกำหนดในฐานข้อมูลเป็น NOT NULL) 
+        // เพื่อให้เซฟผ่านใน Tabที่ 1 ก่อน แล้วค่อยไปอัปเดตสลับค่าจริงใน Tabที่ 2
+        /*$validated['mission_id']         = 0;
+        $validated['strategic_issue_id'] = 0;
+        $validated['goal_id']            = 0;
+        $validated['strategy_id']        = 0;*/
+
        $project = Project::create($request->except(['start_date_formatted', 'end_date_formatted', 'redirect_tab', '_token', '_method']));
 
         return redirect()->route('plan.projects.edit', [$project->id, 'tab' => 'alignment'])
                      ->with('success', 'บันทึกข้อมูลทั่วไปสำเร็จ!');
     }
 
+    /**
+     * หน้าฟอร์มสำหรับดึงข้อมูลโครงการมาแสดงผลแบบแยก Tab ในกรณีเข้าสู่โหมดแก้ไขข้อมูล
+     */
+    /*public function edit(Request $request,$id)
+    {
+        $user = auth()->user(); // ดึง User ที่ล็อกอิน
+        $project = Project::with('projectBudgetSources.budgetSource', 'activities.budgets','activities.subActivities')->findOrFail($id);
+        $isEdit = true;
+        $activeTab = $request->get('tab', 'general'); // รับค่าจาก URL
+        
+
+        $fiscalYears       = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
+        $projectMethods    = ProjectMethod::where('status', 'active')->get();
+        $constructionTypes = ConstructionType::where('status', 'active')->get();
+        $overseasTypes     = OverseasType::where('status', 'active')->get();
+
+        $budgetSources = BudgetSource::where('fiscal_year_id', $project->fiscal_year_id)->get();
+        $programs = Program::all();
+        $budgetCategories = BudgetCategory::all();
+
+        $missions = \App\Models\Plan\Mission::where('fiscal_year_id', $project->fiscal_year_id)
+                    ->with(['strategicIssues.goals.strategies']) // ดึงย่อยลงไปถึง Strategy
+                    ->where('status', 'active')
+                    ->get();
+
+        // 2. กรอง Department และ Personnel ตามสิทธิ์
+        if ($user->hasAnyRoleIds([1, 2])) {
+            // ถ้าเป็น Admin ให้เห็นทั้งหมด
+            $departments = Department::where('status', 'active')->get();
+            $personnels = Personnel::where('status', 'active')->get();
+        } else {
+            // ถ้าไม่ใช่ Admin ให้เห็นเฉพาะหน่วยงานตัวเอง
+            $departments = Department::where('status', 'active')
+                                    ->where('id', $user->personnal->department_id)
+                                    ->get();
+
+            $personnels = Personnel::where('status', 'active')
+                                ->where('department_id', $user->personnal->department_id)
+                                ->get();
+        }
+
+        return view('plan.projects.form', compact(
+            'project',
+            'isEdit',
+            'fiscalYears',
+            'departments',
+            'personnels',
+            'projectMethods',
+            'constructionTypes',
+            'overseasTypes',
+            'budgetSources', 'programs', 'budgetCategories','activeTab','missions'
+        ));
+    }*/
+
     public function edit(Request $request, $id)
     {
         $user = auth()->user();
-        
-        // ลบ activities.subActivities ออกจากการ Query
-        $project = Project::with([
-            'projectBudgetSources.budgetSource.fiscalYear',
-            'projectBudgetSources.program',
-            'projectBudgetSources.category',
-            'projectBudgetSources.budgetSource', 
-            'activities.budgets'
-        ])->findOrFail($id);
+        $project = Project::with(['projectBudgetSources.budgetSource.fiscalYear',
+        'projectBudgetSources.program', // เพิ่ม
+        'projectBudgetSources.category', // เพิ่ม
+        'projectBudgetSources.budgetSource', 'activities.budgets', 'activities.subActivities'])
+                        ->findOrFail($id);
         
         $isEdit = true;
         $activeTab = $request->get('tab', 'general');
 
+        // 1. ดึงข้อมูล Master Data
         $fiscalYears       = FiscalYear::where('status', 'active')->orderBy('year', 'desc')->get();
         $projectMethods    = ProjectMethod::where('status', 'active')->get();
         $constructionTypes = ConstructionType::where('status', 'active')->get();
@@ -183,6 +248,7 @@ class ProjectController extends Controller
                     ->where('status', 'active')
                     ->get();
 
+        // 2. กรอง Department และ Personnel ตามสิทธิ์
         if ($user->hasAnyRoleIds([1, 2])) {
             $departments = Department::where('status', 'active')->get();
             $personnels = Personnel::where('status', 'active')->get();
@@ -195,29 +261,41 @@ class ProjectController extends Controller
                                 ->get();
         }
 
+        // 3. Logic คำนวณงบประมาณ (ย้ายมาจาก show)
+        // ดึงโควต้างบที่หน่วยงานได้รับในปีงบเดียวกับโครงการ
         $allocations = DepartmentAllocation::where('department_id', $project->department_id)
             ->where('fiscal_year_id', $project->fiscal_year_id)
             ->with(['budgetSource', 'program', 'category'])
             ->get();
 
         foreach ($allocations as $allocation) {
+            // 1. ดึงยอดที่ถูกใช้ไปแล้วทั้งหมด (รวมของโครงการตัวเองด้วย)
             $totalUsed = \App\Models\Plan\ProjectBudgetSource::where('department_allocation_id', $allocation->id)
                 ->sum('allocated_amount');
             
+            // 2. ดึงยอดที่โครงการนี้ใช้อยู่ (เพื่อแสดงผลในช่องระบุงบ)
             $current = \App\Models\Plan\ProjectBudgetSource::where('project_id', $project->id)
                 ->where('department_allocation_id', $allocation->id)
                 ->first();
 
             $allocation->project_amount = $current ? $current->allocated_amount : 0;
+
+            // 3. กำหนดค่าแสดงผล
+            // used_amount: คือเงินที่ถูกใช้ไปแล้วจริงๆ (รวมของตัวเอง)
             $allocation->used_amount = $totalUsed; 
 
+            // 4. คำนวณงบคงเหลือ (Available)
+            // remaining_amount = งบที่ได้รับ - (ยอดรวมที่ถูกใช้ไปแล้ว - ยอดที่โครงการนี้ใช้อยู่เดิม)
+            // หมายเหตุ: การลบยอดที่โครงการนี้ใช้อยู่เดิมออก เพื่อให้ระบบมองเห็นว่า "ถ้าเราลบตัวเลขในช่องนี้ออกไป เราจะมีงบเหลือเท่าไหร่"
             $allocation->remaining_amount = $allocation->total_amount - ($totalUsed - $allocation->project_amount);
         }
+
+        
 
         return view('plan.projects.form', compact(
             'project', 'isEdit', 'fiscalYears', 'departments', 'personnels',
             'projectMethods', 'constructionTypes', 'overseasTypes',
-            'activeTab', 'missions', 'allocations'
+            'activeTab', 'missions', 'allocations' // ส่ง allocations ไปด้วย
         ));
     }
 
@@ -226,6 +304,7 @@ class ProjectController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // แปลงวันที่จากหน้าเว็บ (พ.ศ.) ให้เป็นรูปแบบ DB (ค.ศ.) ด้วย Helper
         $request->merge([
             'start_date' => DateHelper::toDbDate($request->start_date),
             'end_date'   => DateHelper::toDbDate($request->end_date),
@@ -241,7 +320,6 @@ class ProjectController extends Controller
             'project_method_id'    => 'required|integer',
             'construction_type_id' => 'required|integer',
             'overseas_type_id'     => 'required|integer',
-            'status'               => 'required|string|in:pending,inprogress,completed,cancelled', // 🟢 เพิ่ม Validation สถานะ
             'start_date'           => 'required|date',
             'end_date'             => 'required|date|after_or_equal:start_date',
         ]);
@@ -259,6 +337,9 @@ class ProjectController extends Controller
     {
         $project = Project::findOrFail($id);
 
+        // ตรวจสอบว่าโครงการนี้มีงบประมาณผูกพันอยู่หรือไม่
+        // สมมติว่าความสัมพันธ์คือ $project->activityBudgets()->exists()
+        // หรือเช็คจากตารางที่คุณเก็บข้อมูลแหล่งเงิน
         if ($project->activityBudgets()->exists()) {
             return response()->json([
                 'status' => 'error',
@@ -273,17 +354,20 @@ class ProjectController extends Controller
             'message' => 'ลบโครงการเรียบร้อยแล้ว'
         ]);
     }
-
     /**
      * อัปเดตข้อมูลมิติยุทธศาสตร์ความสอดคล้องพันธกิจ (Tabที่ 2)
      */
     public function updateAlignment(Request $request, $id)
     {
         $project = Project::findOrFail($id);
-        $strategies = $request->input('strategies', []); 
 
+        // 1. ตรวจสอบข้อมูลที่ส่งมา
+        $strategies = $request->input('strategies', []); // ถ้าไม่ติ๊กเลยจะได้ array ว่าง
+
+        // 2. ลบรายการเก่าออกทั้งหมด
         \App\Models\Plan\ProjectStrategy::where('project_id', $project->id)->delete();
 
+        // 3. วนลูปสร้างใหม่
         if (!empty($strategies)) {
             foreach ($strategies as $strategyId) {
                 $strategy = \App\Models\Plan\Strategy::with('goal.strategicIssue')->findOrFail($strategyId);
@@ -305,6 +389,7 @@ class ProjectController extends Controller
     {
         $project = Project::findOrFail($id);
 
+        // ทำ Validation เพิ่มเติมเพื่อความปลอดภัย
         $validated = $request->validate([
             'background_rationale' => 'required|string',
             'objectives'           => 'required|string',
@@ -313,8 +398,10 @@ class ProjectController extends Controller
             'outputs'              => 'nullable|string',
         ]);
 
+        // บันทึกข้อมูล
         $project->update($validated);
 
+        // Redirect กลับไปที่หน้าเดิม (แท็บเดิม) พร้อมข้อความแจ้งเตือน
         return redirect()->route('plan.projects.edit', [$project->id, 'tab' => 'details'])
                         ->with('success', 'บันทึกรายละเอียดเรียบร้อยแล้ว');
     }
@@ -328,15 +415,17 @@ class ProjectController extends Controller
             $amount = isset($amounts[$index]) ? (float)str_replace(',', '', $amounts[$index]) : 0;
             $allocation = \App\Models\Plan\DepartmentAllocation::find($allocationId);
 
-            if (!$allocation) continue; 
+            if (!$allocation) continue; // ป้องกันกรณีหา allocationId ไม่เจอ
 
             if ($amount > 0) {
                 \App\Models\Plan\ProjectBudgetSource::updateOrCreate(
                     [
+                        // ใช้เงื่อนไขที่ "แน่นอน" ที่สุดในการค้นหา
                         'project_id' => $id,
                         'department_allocation_id' => $allocationId 
                     ],
                     [
+                        // ข้อมูลที่จะอัปเดตหรือสร้างใหม่
                         'allocated_amount' => $amount,
                         'budget_source_id' => $allocation->budget_source_id,
                         'department_allocation_id' =>$allocationId,
@@ -354,30 +443,38 @@ class ProjectController extends Controller
         return redirect()->back()->with('success', 'บันทึกงบประมาณโครงการสำเร็จ');
     }
 
-    /**
-     * อัปเดตกิจกรรม (ยุบเหลือ 1 LV และนำฟิลด์ที่ไม่จำเป็นออก)
-     */
     public function updateActivities(Request $request, $id)
     {
+        // รับค่าจาก array index 0 (ตามที่คุณออกแบบไว้ว่าส่งมาทีละแถว)
         $data = $request->activities[0]; 
 
+        // รายการ field ทั้งหมดที่ต้องบันทึก
         $activityData = [
-            'name'       => $data['name'],
-            'start_date' => $data['start_date'] ?? null,
-            'end_date'   => $data['end_date'] ?? null,
+            'name'         => $data['name'],
+            'objectives'   => $data['objectives'] ?? null,
+            'indicators'   => $data['indicators'] ?? null,
+            'target_group' => $data['target_group'] ?? null,
+            'outputs'      => $data['outputs'] ?? null,
+            'start_date'   => $data['start_date'] ?? null,
+            'end_date'     => $data['end_date'] ?? null,
         ];
 
         if (!empty($data['id'])) {
+            // กรณีแก้ไข (Update)
             $activity = \App\Models\Plan\ProjectActivity::findOrFail($data['id']);
             $activity->update($activityData);
+            // ล้างงบเก่าออกก่อนบันทึกใหม่
             $activity->budgets()->delete();
         } else {
+            // กรณีเพิ่มใหม่ (Create)
             $project = Project::findOrFail($id);
             $activity = $project->activities()->create($activityData);
         }
 
+        // บันทึกงบประมาณ
         if (!empty($data['budget'])) {
             foreach ($data['budget'] as $sourceId => $amount) {
+                // กรองเฉพาะค่าที่มีจำนวนเงินมากกว่า 0
                 if (!is_null($amount) && $amount != 0) {
                     $activity->budgets()->create([
                         'project_budget_source_id' => $sourceId, 
@@ -393,6 +490,7 @@ class ProjectController extends Controller
     public function getActivityForm($id = 0) 
     {
         $activity = $id > 0 ? ProjectActivity::findOrFail($id) : null;
+        // โหลดข้อมูล project พร้อมความสัมพันธ์ที่จำเป็น (Source -> Program/Category)
         $project = Project::with([
             'projectBudgetSources.budgetSource.fiscalYear', 
             'projectBudgetSources.program', 
@@ -405,23 +503,28 @@ class ProjectController extends Controller
             'index' => 0
         ]);
     }
+   
 
+    // ใน ProjectController
     public function show($id)
     {
         $project = Project::findOrFail($id);
         
+        // ดึงงบประมาณที่หน่วยงานนี้ได้รับในปีงบประมาณเดียวกับโครงการ
         $allocations = DepartmentAllocation::where('department_id', $project->department_id)
             ->where('fiscal_year_id', $project->fiscal_year_id)
             ->with(['budgetSource', 'program', 'category'])
             ->get();
 
+        // คำนวณยอดที่ถูกใช้ไปแล้วของแต่ละ allocation ในโครงการอื่นๆ
         foreach ($allocations as $allocation) {
             $used = \App\Models\Plan\ProjectBudgetSource::where('department_allocation_id', $allocation->id)
-                ->where('project_id', '!=', $project->id) 
+                ->where('project_id', '!=', $project->id) // ยกเว้นโครงการตัวเอง
                 ->sum('amount');
             
             $allocation->remaining_amount = $allocation->total_amount - $used;
             
+            // เช็คว่าโครงการนี้ใช้อยู่เท่าไหร่ (เพื่อแสดงค่าเดิมตอนแก้ไข)
             $allocation->project_amount = \App\Models\Plan\ProjectBudgetSource::where('project_id', $project->id)
                 ->where('department_allocation_id', $allocation->id)
                 ->value('amount') ?? 0;
@@ -434,7 +537,11 @@ class ProjectController extends Controller
     {
         try {
             $activity = \App\Models\Plan\ProjectActivity::findOrFail($id);
+            
+            // ลบงบประมาณที่ผูกกับกิจกรรมนี้ก่อน (เพื่อป้องกัน Error จาก Foreign Key)
             $activity->budgets()->delete();
+            
+            // ลบกิจกรรม
             $activity->delete();
 
             return response()->json([
@@ -447,50 +554,6 @@ class ProjectController extends Controller
                 'message' => 'ไม่สามารถลบกิจกรรมได้: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    public function getProjectBudgetSummary($projectId)
-    {
-        $project = Project::with([
-            'projectBudgetSources.budgetSource.fiscalYear',
-            'projectBudgetSources.program',
-            'projectBudgetSources.category',
-            'activities.budgets'
-        ])->findOrFail($projectId);
-
-        $summary = [];
-
-        foreach ($project->projectBudgetSources as $pbs) {
-            $initialBudget = (float) $pbs->allocated_amount;
-            $consumed = 0; // ยอดรวมที่จัดสรรลงกิจกรรมทั้งหมด
-
-            foreach ($project->activities as $activity) {
-                // กรองหางบประมาณของกิจกรรมที่ตรงกับแหล่งเงิน (Project Budget Source ID นี้)
-                $actBudget = $activity->budgets->where('project_budget_source_id', $pbs->id)->first();
-                if ($actBudget) {
-                    $consumed += (float) $actBudget->amount;
-                }
-            }
-
-            $balance = $initialBudget - $consumed;
-            
-            $borderClass = $balance < 0 ? 'border-danger bg-danger-subtle' : ($balance == 0 ? 'border-success bg-success-subtle' : 'border-primary');
-            $textClass = $balance < 0 ? 'text-danger' : ($balance == 0 ? 'text-success' : 'text-primary');
-
-            $summary[] = [
-                'source_name' => $pbs->budgetSource->name ?? 'ไม่ระบุ',
-                'fiscal_year' => ($pbs->budgetSource->fiscalYear->year ?? 0) > 2500 ? $pbs->budgetSource->fiscalYear->year : ($pbs->budgetSource->fiscalYear->year + 543),
-                'program_name' => $pbs->program->name ?? '-',
-                'category_name' => $pbs->category->name ?? '-',
-                'initial_budget' => $initialBudget,
-                'consumed' => $consumed,
-                'balance' => $balance,
-                'border_class' => $borderClass,
-                'text_class' => $textClass
-            ];
-        }
-
-        return response()->json($summary);
     }
 
 }

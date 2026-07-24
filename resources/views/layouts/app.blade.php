@@ -187,7 +187,7 @@
         @endif
 
         <!-- Plan Menu -->
-        @if(auth()->user() && auth()->user()->hasAnyRoleIds([2,4]))
+        @if(auth()->user() && auth()->user()->hasAnyRoleIds([1,2,4]))
             <li class="nav-header ps-3 text-uppercase text-white-50 fs-7 fw-bold mb-1">ติดตามความก้าวหน้าโครงการ</li>
             <li>
                 <a href="#projectPlanMenu" data-bs-toggle="collapse" aria-expanded="{{ Request::is('config*', 'plan*') ? 'true' : 'false' }}" class="dropdown-toggle {{ Request::is('config*', 'plan*') ? '' : 'collapsed' }}">
@@ -208,14 +208,54 @@
                                 <li class="{{ Request::is('plan/strategic-issues*') ? 'active' : '' }}"><a href="{{ url('plan/strategic-issues') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-bullseye me-2"></i> ชั้นที่ 2: ประเด็นยุทธศาสตร์</a></li>
                                 <li class="{{ Request::is('plan/goals*') ? 'active' : '' }}"><a href="{{ url('plan/goals') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-crosshairs me-2"></i> ชั้นที่ 3: เป้าประสงค์</a></li>
                                 <li class="{{ Request::is('plan/strategies*') ? 'active' : '' }}"><a href="{{ url('plan/strategies') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-chess-knight me-2"></i> ชั้นที่ 4: กลยุทธ์องค์กร</a></li>
-                                <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}"><a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-wallet me-2 text-success"></i> แหล่งเงินงบประมาณ</a></li>
-                                <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}"><a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-layer-group me-2 text-info"></i> แผนงาน (แหล่งเงิน L1)</a></li>
-                                <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}"><a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50"><i class="fa-solid fa-tags me-2 text-danger"></i> หมวดงบรายจ่าย (L2)</a></li>
+                                {{-- 1-4. เมนูบริหารจัดการงบประมาณ --}}
+                                <li>
+                                    @php
+                                        $isBudgetMenuActive = Request::is('plan/budget-sources*', 'plan/programs*', 'plan/budget-categories*', 'plan/department-allocations*');
+                                    @endphp
+                                    <a href="#budgetMgmtMenu" data-bs-toggle="collapse" aria-expanded="{{ $isBudgetMenuActive ? 'true' : 'false' }}" class="dropdown-toggle ps-4 bg-dark text-info {{ $isBudgetMenuActive ? '' : 'collapsed' }}">
+                                        <i class="fa-solid fa-money-bill-transfer me-2"></i> บริหารงบประมาณ
+                                    </a>
+                                    <ul class="collapse list-unstyled {{ $isBudgetMenuActive ? 'show' : '' }}" id="budgetMgmtMenu" style="background-color: #0b0f17;">
+                                        <li class="{{ Request::is('plan/budget-sources*') ? 'active' : '' }}">
+                                            <a href="{{ url('plan/budget-sources') }}" class="ps-5 fs-7 text-white-50">
+                                                <i class="fa-solid fa-wallet me-2 text-success"></i> 1. แหล่งเงินงบประมาณ
+                                            </a>
+                                        </li>
+                                        <li class="{{ Request::is('plan/programs*') ? 'active' : '' }}">
+                                            <a href="{{ url('plan/programs') }}" class="ps-5 fs-7 text-white-50">
+                                                <i class="fa-solid fa-layer-group me-2 text-info"></i> 2. แผนงาน (แหล่งเงิน L1)
+                                            </a>
+                                        </li>
+                                        <li class="{{ Request::is('plan/budget-categories*') ? 'active' : '' }}">
+                                            <a href="{{ url('plan/budget-categories') }}" class="ps-5 fs-7 text-white-50">
+                                                <i class="fa-solid fa-tags me-2 text-danger"></i> 3. หมวดงบรายจ่าย (L2)
+                                            </a>
+                                        </li>
+                                        <li class="{{ Request::is('plan/department-allocations*') ? 'active' : '' }}">
+                                            <a href="{{ url('plan/department-allocations') }}" class="ps-5 fs-7 text-white-50">
+                                                <i class="fa-solid fa-building-user me-2 text-warning"></i> 4. การจัดสรรงบรายหน่วยงาน
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                     @endif
                     <li class="{{ Request::is('plan/projects*') ? 'active' : '' }}">
                         <a href="{{ url('plan/projects') }}" class="ps-4"><i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> ข้อมูลโครงการ & แผนเงิน</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('plan/disbursements*') ? 'active' : '' }}" href="{{ route('plan.disbursements.index') }}">
+                            <i class="fa-solid fa-money-bill-transfer me-2"></i> ระบบเบิกจ่ายงบประมาณ
+                        </a>
+                    </li>
+                    <!-- เมนูระบบรายงาน (โมดูล Plan) -->
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('plan.reports.project_summary') ? 'active' : '' }}" 
+                            href="{{ route('plan.reports.project_summary') }}">
+                                <i class="fa-solid fa-chart-pie me-2"></i> รายงานสรุปผลการดำเนินงาน
+                            </a>
                     </li>
                 </ul>
             </li>

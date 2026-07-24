@@ -1,0 +1,598 @@
+<button type="button" class="btn btn-primary mb-3" onclick="openActivityModal()">+ เพิ่มกิจกรรม</button>
+
+<div class="alert alert-info border-0 shadow-sm rounded-4 mb-4">
+    <div class="w-100">
+        <div class="d-flex align-items-center mb-3">
+            @php
+                    // 1. วงเงินที่ได้รับในโครงการ
+                    $totalProjectBudget = $project->projectBudgetSources->sum('allocated_amount');
+            @endphp
+
+            <i class="fa-solid fa-wallet text-primary me-2 fs-5"></i> 
+            <strong class="fs-6">งปม.ที่ได้รับจัดสรร รวมในโครงการนี้ {{$totalProjectBudget}} บาท</strong>
+        </div>
+        <div id="budget-summary-bar" class="row g-3"></div>
+    </div>
+</div>
+
+<table class="table table-hover table-bordered align-middle" id="activity-table">
+    <thead class="table-light">
+        <tr>
+            <th>ลำดับ</th>
+            <th>ชื่อกิจกรรม</th>
+            <th>งปม.ที่จัดสรรลงกิจกรรม</th>
+            <th class="text-center">-</th>
+        </tr>
+    </thead>
+    <tbody id="activity-body">
+        @foreach($project->activities as $index => $activity)
+            @php
+                // 1. ยอดเงินที่กิจกรรมหลักได้รับจัดสรร
+                $activityTotal = $activity->budgets->sum('amount');
+                $hasBudget = $activityTotal > 0;
+
+                // 2. คำนวณยอดที่จัดสรรลงกิจกรรมย่อย (ใช้ PO เป็นหลัก ถ้าไม่มีใช้ PR)
+                $subEffectiveTotal = 0;
+                foreach($activity->subActivities as $sub) {
+                    foreach($sub->budgets as $subBudget) {
+                        $effective = !is_null($subBudget->po_amount) ? $subBudget->po_amount : $subBudget->allocated_amount;
+                        $subEffectiveTotal += $effective;
+                    }
+                }
+
+                // 3. ยอดคงเหลือของกิจกรรมหลัก (เงินที่ยังไม่ได้จัดสรรลงกิจกรรมย่อย)
+                $activityRemaining = $activityTotal - $subEffectiveTotal;
+            @endphp
+
+            <tr data-id="{{ $activity->id }}">
+                <td>{{ $index + 1 }}</td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span>{{ $activity->name }}</span>
+                        @if($hasBudget)
+                            <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1 small" 
+                                    onclick="toggleSubActivities({{ $activity->id }}, this)">
+                                <i class="fa-solid fa-list-check me-1 small"></i> จัดการกิจกรรมย่อย
+                            </button>
+                        @else
+                            <span class="badge bg-light text-muted border small fw-normal">ยังไม่ได้จัดสรรงบประมาณ</span>
+                        @endif
+                    </div>
+                </td>
+                
+                <!-- แสดงยอดงบประมาณที่กิจกรรมหลักได้รับ -->
+                <td class="fw-bold text-dark">{{ number_format($activityTotal, 2) }}</td>
+                
+                <!-- แสดงยอดที่ถูกกันไปใช้ในกิจกรรมย่อยแล้ว (PR/PO) 
+                <td class="text-primary">{{ number_format($subEffectiveTotal, 2) }}</td>
+                
+                 แสดงยอดคงเหลือของกิจกรรมหลัก 
+                <td class="fw-bold {{ $activityRemaining < 0 ? 'text-danger' : 'text-success' }}">
+                    {{ number_format($activityRemaining, 2) }}
+                </td>-->
+                
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-warning" onclick="openActivityModal({{ $activity->id }})">แก้ไข</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteActivity({{ $activity->id }})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+
+            @if($hasBudget)
+                <tr id="sub-activity-row-{{ $activity->id }}" style="display:none;">
+                    <td colspan="{{ $project->projectBudgetSources->count() + 4 }}" class="bg-light p-3">
+                        <div class="card border-0 shadow-sm p-3 rounded-3 mb-2">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                <span class="fw-bold text-secondary">
+                                    <i class="fa-solid fa-folder-tree me-1"></i> รายการกิจกรรมย่อยภายใต้: {{ $activity->name }}
+                                </span>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="openSubActivityModal({{ $activity->id }})">
+                                        <i class="fa-solid fa-plus me-1"></i> เพิ่มกิจกรรมย่อย
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="closeSubActivityRow({{ $activity->id }})">
+                                        <i class="fa-solid fa-xmark me-1"></i> ปิดช่องนี้
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="sub-activity-container-{{ $activity->id }}">
+                                @if($activity->subActivities->count() === 0)
+                                    <div class="text-center py-4 text-muted bg-light rounded-3 border border-dashed">
+                                        <i class="fa-solid fa-circle-info text-secondary mb-2 fs-5 d-block"></i>
+                                        <span>ยังไม่มีรายการกิจกรรมย่อยในระบบ</span>
+                                    </div>
+                                @else
+                                    <div class="text-center py-3 text-muted small">
+                                        <i class="fa-solid fa-spinner fa-spin me-1"></i> กำลังโหลดข้อมูลกิจกรรมย่อย...
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            @endif
+        @endforeach
+    </tbody>
+</table>
+
+<div class="modal fade" id="activityModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form id="activityForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header"><h5>จัดการกิจกรรมหลัก</h5></div>
+                <div class="modal-body" id="modal-content"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-success">บันทึกกิจกรรมหลัก</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="subActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form id="subActivityForm">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header"><h5>จัดการกิจกรรมย่อย</h5></div>
+                    <div class="modal-body" id="sub-modal-content"></div>
+                 </div>
+            </div>
+        </form>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fa-solid fa-money-bill-transfer text-primary me-2"></i> บันทึกการเบิกจ่าย</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="payment-modal-content">
+                <div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fs-3"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    const projectBudgets = @json($project->projectBudgetSources);
+
+    function openActivityModal(id = null) {
+        let url = id ? `{{ url('plan/projects/activity-form') }}/${id}` : `{{ url('plan/projects/activity-form') }}`;
+        $.get(url, { project_id: currentProjectId }, function(html) {
+            $('#modal-content').html(html);
+            var modalEl = document.getElementById('activityModal');
+            var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl, { backdrop: 'static' });
+            myModal.show();
+        });
+    }
+
+    $('#activityForm').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: `{{ url('plan/projects') }}/${currentProjectId}/update-activities`,
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(res) {
+                const modalEl = document.getElementById('activityModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl); 
+                if (modalInstance) modalInstance.hide();
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1000, showConfirmButton: false }).then(() => { window.location.reload(); });
+            },
+            error: function(xhr) { Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error'); }
+        });
+    });
+
+    function toggleSubActivities(activityId, button) {
+        let row = $(`#sub-activity-row-${activityId}`);
+        if (row.is(':visible')) {
+            row.slideUp(200);
+            $(button).removeClass('btn-secondary text-white').addClass('btn-outline-secondary');
+        } else {
+            row.slideDown(200);
+            $(button).removeClass('btn-outline-secondary').addClass('btn-secondary text-white');
+        }
+    }
+
+    function closeSubActivityRow(activityId) {
+        $(`#sub-activity-row-${activityId}`).slideUp(200);
+        $(`tr[data-id="${activityId}"]`).find('button[onclick^="toggleSubActivities"]').removeClass('btn-secondary text-white').addClass('btn-outline-secondary');
+    }
+    
+    // 🟢 แก้ไข: ใช้ var แทน const เพื่อป้องกัน SyntaxError: Identifier has already been declared
+    var currentProjectId = {{ $project->id }};
+    
+    function updateBudgetSummary() {
+        if (!currentProjectId) return;
+        
+        // แสดงสถานะกำลังโหลด
+        $('#budget-summary-bar').html('<div class="col-12 text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังคำนวณยอดงบประมาณ...</div>');
+        
+        // เรียก API เพื่อดึงยอดที่คำนวณมาจาก Controller
+        $.get(`/plan/projects/${currentProjectId}/budget-summary`, function(data) {
+            let summaryHtml = '';
+            
+            if (!data || data.length === 0) {
+                $('#budget-summary-bar').html('<div class="col-12 text-muted small">ยังไม่มีการกำหนดแหล่งงบประมาณใน Tab 4</div>');
+                return;
+            }
+
+            data.forEach(b => {
+                summaryHtml += `
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card bg-white border-start border-4 ${b.border_class} shadow-sm rounded-3">
+                            <div class="card-body p-3">
+                                <div class="fw-bold text-dark mb-1">
+                                    <i class="fa-solid fa-coins text-muted me-1 small"></i> ${b.source_name} 
+                                    <span class="badge bg-secondary rounded-pill small">${b.fiscal_year}</span>
+                                </div>
+                                <div class="small text-muted mb-3">
+                                    <i class="fa-solid fa-folder-open me-1"></i> ${b.program_name} <br>
+                                    <i class="fa-solid fa-layer-group me-1"></i> ${b.category_name}
+                                </div>
+                                <div class="d-flex flex-column gap-1 small text-muted border-top pt-2 mt-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>งปม.ที่จัดสรรลงโครงการ:</span>
+                                        <span class="fw-semibold text-dark">${b.initial_budget.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>งปม.ที่จัดสรรลงกิจกรรม:</span>
+                                        <span class="fw-semibold text-secondary">${b.consumed.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="small fw-bold">คงเหลือ:</span>
+                                    <span class="fs-5 fw-bold ${b.text_class}">${b.balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            $('#budget-summary-bar').html(summaryHtml);
+        }).fail(function() {
+            $('#budget-summary-bar').html('<div class="col-12 text-danger small">เกิดข้อผิดพลาดในการโหลดข้อมูลสรุปงบประมาณ</div>');
+        });
+    }
+
+    function loadSubActivities(activityId) {
+        if (!activityId) return;
+
+        $.get(`/plan/sub-activities/list/${activityId}`, function(data) {
+            let container = $(`#sub-activity-container-${activityId}`);
+            if (data.length === 0) {
+                container.html('<div class="text-center py-3 text-muted">ยังไม่มีกิจกรรมย่อย</div>');
+                return;
+            }
+
+            let html = `<div class="d-flex flex-column gap-3">`;
+            
+            data.forEach(sub => {
+                let totalPrAmount = 0, totalPoAmount = 0, totalEffective = 0, totalPaid = 0;
+                let hasAnyPo = false;
+                
+                let paymentList = [];
+                let allocationDetails = `<ul class="list-group list-group-flush small">`;
+                let remainingDetails = `<ul class="list-group list-group-flush small">`;
+
+                if (sub.budgets && sub.budgets.length > 0) {
+                    sub.budgets.forEach(b => {
+                        let prAmount = parseFloat(b.allocated_amount || 0);
+                        let poAmount = (b.po_amount !== null && b.po_amount !== '') ? parseFloat(b.po_amount) : null;
+                        
+                        totalPrAmount += prAmount;
+                        if (poAmount !== null) { totalPoAmount += poAmount; hasAnyPo = true; }
+                        
+                        let effective = poAmount !== null ? poAmount : prAmount;
+                        totalEffective += effective;
+
+                        // ยอดประวัติ
+                        let sourcePaid = 0;
+                        if(b.payments && b.payments.length > 0) {
+                            b.payments.forEach(p => {
+                                sourcePaid += parseFloat(p.amount);
+                                paymentList.push({
+                                    id: p.id,
+                                    date: p.payment_date,
+                                    source: `${b.source_name} [ปี ${b.fiscal_year}]`,
+                                    program_cat: `${b.program_name} / ${b.category_name}`,
+                                    amount: parseFloat(p.amount)
+                                });
+                            });
+                        }
+                        totalPaid += sourcePaid;
+                        let balance = effective - sourcePaid;
+
+                        allocationDetails += `
+                            <li class="list-group-item px-0 py-1 bg-transparent border-0 d-flex justify-content-between">
+                                <span><i class="fa-solid fa-caret-right text-muted me-1"></i>${b.source_name}</span>
+                                <span>PR: ${prAmount.toLocaleString()} ${poAmount !== null ? ` | <strong class="text-success">PO: ${poAmount.toLocaleString()}</strong>` : ''}</span>
+                            </li>`;
+                            
+                        remainingDetails += `
+                            <li class="list-group-item px-0 py-1 bg-transparent border-0 d-flex justify-content-between">
+                                <span><i class="fa-solid fa-caret-right text-muted me-1"></i>${b.source_name}</span>
+                                <strong class="${balance < 0 ? 'text-danger' : 'text-success'}">${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong>
+                            </li>`;
+                    });
+                } else {
+                    allocationDetails += `<li class="list-group-item px-0 py-1 text-muted">ไม่มีข้อมูลจัดสรร</li>`;
+                }
+
+                allocationDetails += `
+                    <li class="list-group-item px-0 py-1 bg-transparent border-top fw-bold mt-2 d-flex justify-content-between">
+                        <span>รวมยอดจัดสรร:</span>
+                        <span>PR: ${totalPrAmount.toLocaleString()} ${hasAnyPo ? ` | <span class="text-success">PO: ${totalPoAmount.toLocaleString()}</span>` : ''}</span>
+                    </li></ul>`;
+                    
+                let netBalance = totalEffective - totalPaid;
+                remainingDetails += `
+                    <li class="list-group-item px-0 py-1 bg-transparent border-top fw-bold mt-2 d-flex justify-content-between">
+                        <span>ยอดคงเหลือสุทธิ:</span>
+                        <span class="${netBalance < 0 ? 'text-danger' : 'text-success'} fs-6">${netBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                    </li></ul>`;
+
+                // ส่วนตารางประวัติเบิกจ่าย
+                let paymentHtml = `<div class="table-responsive"><table class="table table-sm table-hover mb-0 mt-2">
+                    <thead class="table-light"><tr>
+                        <th>วันที่</th>
+                        <th>แหล่งเงิน / แผนงาน / หมวด</th>
+                        <th class="text-end">จำนวนเงิน</th>
+                        <th class="text-center" width="70">จัดการ</th>
+                    </tr></thead><tbody>`;
+                
+                if (paymentList.length > 0) {
+                    paymentList.forEach(p => {
+                        // 🟢 แก้ไข: ย้ายปุ่มแก้ไขมาไว้ด้านในลูปนี้ เพื่อให้ทำงานได้ถูกต้อง
+                        paymentHtml += `<tr>
+                            <td>${p.date}</td>
+                            <td>${p.source} <br><small class="text-muted">${p.program_cat}</small></td>
+                            <td class="text-end text-danger fw-bold">-${p.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-warning py-0 px-1" onclick="editPayment(${p.id})"><i class="fa-solid fa-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger py-0 px-1 btn-delete-payment" data-id="${p.id}" data-activity-id="${activityId}" title="ลบรายการนี้">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+                    paymentHtml += `<tr class="bg-light fw-bold">
+                        <td colspan="2" class="text-end">รวมเบิกจ่ายแล้วทั้งสิ้น:</td>
+                        <td class="text-end text-danger">${totalPaid.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td></td>
+                    </tr>`;
+                } else {
+                    paymentHtml += `<tr><td colspan="4" class="text-center text-muted py-2">ยังไม่มีประวัติการเบิกจ่าย</td></tr>`;
+                }
+                paymentHtml += `</tbody></table></div>`;
+
+                // ประกอบร่าง Card กิจกรรมย่อย 1 Block
+                html += `
+                <div class="card shadow-sm border border-secondary-subtle">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                        <h6 class="fw-bold text-primary mb-0"><i class="fa-solid fa-check-square me-2"></i>${sub.name}</h6>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-warning btn-edit-sub text-dark" data-id="${sub.id}" data-activity-id="${activityId}"><i class="fa-solid fa-pencil"></i> แก้ไข</button>
+                            <button class="btn btn-sm btn-danger btn-delete-sub" data-id="${sub.id}" data-activity-id="${activityId}"><i class="fa-solid fa-trash"></i> ลบ</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3 border-bottom pb-3">
+                            <div class="col-md-6 border-end">
+                                <h6 class="fw-bold text-secondary border-bottom pb-1"><i class="fa-solid fa-coins"></i> รายละเอียดการจัดสรรเงิน</h6>
+                                ${allocationDetails}
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-success border-bottom pb-1"><i class="fa-solid fa-wallet"></i> สรุปงบประมาณคงเหลือแยกแหล่งเงิน</h6>
+                                ${remainingDetails}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold text-info mb-0"><i class="fa-solid fa-clock-rotate-left"></i> ประวัติการเบิกจ่าย</h6>
+                                ${netBalance > 0 
+                                    ? `<button class="btn btn-sm btn-primary btn-payment" data-id="${sub.id}"><i class="fa-solid fa-plus"></i> เพิ่มเบิกจ่าย</button>` 
+                                    : `<span class="badge bg-secondary">งบหมดแล้ว</span>`}
+                            </div>
+                            ${paymentHtml}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div>`;
+            container.html(html);
+            $(`#sub-activity-row-${activityId}`).slideDown(200);
+        }).fail(function(xhr) {
+            console.error("โหลดรายการกิจกรรมย่อยล้มเหลว:", xhr.responseText);
+        });
+    }
+
+    function openSubActivityModal(activityId) {
+        $.get(`/plan/sub-activities/form/${activityId}`, function(html) {
+           $('#sub-modal-content').html(html);
+            $('#subActivityModal').modal('show');
+        });
+    }
+
+    $(document).off('click', '#btnSaveSubActivity').on('click', '#btnSaveSubActivity', function() {
+        let $form = $('#subActivityForm');
+        let activityId = $form.find('input[name="activity_id"]').val();
+
+        $.ajax({
+            url: "/api/sub-activities/store/" + activityId,
+            type: 'POST',
+            data: $form.serialize(),
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function(res) {
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1000, showConfirmButton: false });
+                $('#subActivityModal').modal('hide');
+                setTimeout(() => { window.location.reload(); }, 1000);
+            },
+            error: function(xhr) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกข้อมูลได้' });
+            }
+        });
+    });
+
+    function openPaymentModal(subActivityId) {
+        $.get("{{ url('plan/payments/form') }}/" + subActivityId, function(data) {
+            $('#payment-modal-content').html(data);
+            $('#paymentModal').modal('show');
+        }).fail(function(xhr) { Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบฟอร์ม', 'error'); });
+    }
+
+    $(document).off('click', '#btnSavePayment').on('click', '#btnSavePayment', function() {
+        let $form = $('#paymentForm');
+        $.ajax({
+            url: "{{ route('plan.payments.store') }}",
+            type: 'POST',
+            dataType: 'json',
+            data: $form.serialize(),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(res) {
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1000, showConfirmButton: false });
+                $('#paymentModal').modal('hide');
+                setTimeout(() => { window.location.reload(); }, 1000);
+            },
+            error: function(xhr) {
+                let errorMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'เกิดข้อผิดพลาด';
+                Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: errorMsg });
+            }
+        });
+    });
+
+    // ดักจับการลบเบิกจ่ายรายรายการ
+    $(document).off('click', '.btn-delete-payment').on('click', '.btn-delete-payment', function() {
+        let paymentId = $(this).data('id');
+        let activityId = $(this).data('activity-id');
+        Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: "ต้องการลบประวัติการเบิกจ่ายรายการนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'ลบเลย'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/plan/payments/${paymentId}`,
+                    type: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function(res) {
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
+                        loadSubActivities(activityId);
+                        updateBudgetSummary();
+                    },
+                    error: function(xhr) { Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error'); }
+                });
+            }
+        });
+    });
+    
+    $(document).ready(function() {
+        updateBudgetSummary();
+        $('button[onclick^="toggleSubActivities"]').each(function() {
+            let activityId = $(this).attr('onclick').match(/\d+/)[0];
+            if (activityId) loadSubActivities(activityId);
+        });
+    });
+
+    function deleteActivity(id) {
+        Swal.fire({
+            title: 'คุณแน่ใจหรือไม่?', text: "ไม่สามารถกู้คืนได้!", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'ใช่, ลบเลย!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `{{ url('plan/projects/activities') }}/${id}`,
+                    type: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function(res) {
+                        Swal.fire('ลบสำเร็จ!', res.message, 'success');
+                        $(`tr[data-id="${id}"]`).remove();
+                        $(`#sub-activity-row-${id}`).remove();
+                        updateBudgetSummary();
+                    }
+                });
+            }
+        });
+    }
+
+    function formatBudgetInput(input) {
+        let rawValue = input.value.replace(/,/g, '');
+        if (isNaN(rawValue) || rawValue === "") { $(input).parent().find('.budget-hidden').val(0); return; }
+        $(input).parent().find('.budget-hidden').val(rawValue);
+        let parts = rawValue.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        input.value = parts.join('.');
+    }
+
+    function editSubActivity(subId, activityId) {
+        $.get(`/plan/sub-activities/form/${activityId}?sub_id=${subId}`, function(html) {
+            $('#sub-modal-content').html(html);
+            $('#subActivityModal').modal('show');
+        }).fail(function() { Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูล', 'error'); });
+    }
+
+    function deleteSubActivity(subId, activityId) {
+        Swal.fire({
+            title: 'ยืนยันการลบ?', text: "คืนงบประมาณกลับเข้าสู่กิจกรรมหลัก", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'ลบเลย!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/plan/sub-activities/delete/${subId}`,
+                    type: 'DELETE',
+                    data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                    success: function() {
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
+                        setTimeout(() => { window.location.reload(); }, 1000);
+                    },
+                    error: function() { Swal.fire('ข้อผิดพลาด', 'ลบไม่ได้ อาจมีการเบิกจ่ายไปแล้ว', 'error'); }
+                });
+            }
+        });
+    }
+    
+    // 1. ฟังก์ชันเปิดหน้าแก้ไข
+    function editPayment(paymentId) {
+        $.get("{{ url('plan/payments/payment-edit') }}/" + paymentId, function(data) {
+            $('#payment-modal-content').html(data);
+            $('#paymentModal').modal('show');
+        });
+    }
+
+    // 2. Event click ปุ่มบันทึกแก้ไข
+    $(document).off('click', '#btnUpdatePayment').on('click', '#btnUpdatePayment', function() {
+        let paymentId = $('#editPaymentForm input[name="payment_id"]').val();
+        $.ajax({
+            url: "/plan/payments/update/" + paymentId,
+            type: 'POST', // ใช้ POST แต่ Method PUT ใน data
+            data: $('#editPaymentForm').serialize(),
+            success: function() {
+                Swal.fire('สำเร็จ', 'แก้ไขรายการเบิกจ่ายแล้ว', 'success');
+                $('#paymentModal').modal('hide');
+                window.location.reload();
+            }
+        });
+    });
+
+</script>
+<script>
+    $(document).on('click', '.btn-payment', function() { openPaymentModal($(this).data('id')); });
+    $(document).off('click', '.btn-edit-sub').on('click', '.btn-edit-sub', function() { editSubActivity($(this).data('id'), $(this).data('activity-id')); });
+    $(document).off('click', '.btn-delete-sub').on('click', '.btn-delete-sub', function() { deleteSubActivity($(this).data('id'), $(this).data('activity-id')); });
+</script>
+@endpush

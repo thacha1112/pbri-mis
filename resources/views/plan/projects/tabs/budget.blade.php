@@ -1,174 +1,150 @@
-<form id="projectBudgetForm">
+<form id="projectBudgetForm" action="{{ route('plan.projects.update-budget', $project->id) }}" method="POST">
     @csrf
-    <div class="alert alert-success border-0 mb-3 small">
-        <i class="fa-solid fa-sack-dollar me-2"></i> กรุณาระบุแหล่งเงินงบประมาณ
-        
+    <div class="alert alert-primary border-0 shadow-sm mb-4 rounded-4 px-4 py-3 small text-primary bg-primary-subtle bg-opacity-10 d-flex align-items-center">
+        <i class="fa-solid fa-circle-info fs-5 me-3"></i>
+        <div>
+            <strong>คำแนะนำ:</strong> ระบบจะแสดงงบประมาณที่หน่วยงานได้รับในปีงบประมาณ 
+            <span class="badge bg-primary px-2 py-1 ms-1">{{ $project->fiscalYear->year  }} (พ.ศ.)</span>
+        </div>
     </div>
 
-    <div id="budget-rows">
-        @foreach($project->projectBudgetSources as $budget)
-        <div class="row g-2 mb-3 budget-row border-bottom pb-3" id="row_{{ $budget->id }}">
-            <div class="col-md-3">
-                <select class="form-select source-select" name="source_id[]" {!! $project->total_allocated_budget > 0 ? 'disabled':'' !!} required>
-                    <option value="">-- แหล่งเงิน --</option>
-                    @foreach($budgetSources as $s)
-                        <option value="{{ $s->id }}" {{ $budget->budget_source_id == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select program-select" name="program_id[]" {!! $project->total_allocated_budget > 0 ? 'disabled':'' !!} {{ !$budget->program_id ? 'disabled' : '' }}>
-                    <option value="">-- แผนงาน (ถ้ามี) --</option>
-                    @foreach($programs->where('budget_source_id', $budget->budget_source_id) as $p)
-                        <option value="{{ $p->id }}" {{ (int)$budget->program_id === (int)$p->id ? 'selected' : '' }}>
-                            {{ $p->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select category-select" name="category_id[]" {!! $project->total_allocated_budget > 0 ? 'disabled':'' !!} {{ !$budget->category_id ? 'disabled' : '' }}>
-                    <option value="">-- หมวดงบ (ถ้ามี) --</option>
-                    @foreach($budgetCategories->where('program_id', $budget->program_id) as $c)
-                        <option value="{{ $c->id }}" {{ (int)$budget->category_id === (int)$c->id ? 'selected' : '' }}>
-                            {{ $c->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-center text-uppercase fs-7 text-secondary fw-bold">
+                    <tr>
+                        <th class="py-3" width="10%">ปีแหล่งเงิน</th>
+                        <th class="py-3 text-start">แหล่งเงิน / แผนงาน / หมวดงบ</th>
+                        <th class="py-3 text-end" width="15%">งปม.ที่ได้รับจัดสรร (บาท)</th>
+                        <th class="py-3 text-end" width="15%">จัดสรรลงโครงการแล้ว (บาท)</th>
+                        <th class="py-3 text-end" width="15%">งปม.คงเหลือ (บาท)</th>
+                        <th class="py-3 text-end" width="18%">ระบุงบลงโครงการ (บาท)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($allocations as $item)
+                        @php
+                            $remaining = $item->total_amount - $item->used_amount;
+                        @endphp
+                        <tr class="budget-row">
+                            <td class="text-center">
+                                <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 fw-semibold">
+                                    {{ ($item->budgetSource->fiscalYear->year ?? 0) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ $item->budgetSource->name }}</div>
+                                <small class="text-muted">
+                                    <i class="fa-solid fa-folder-open me-1 text-black-50"></i>{{ $item->program->name ?? '-' }} / 
+                                    <i class="fa-solid fa-layer-group me-1 text-black-50"></i>{{ $item->category->name ?? '-' }}
+                                </small>
+                                <input type="hidden" name="allocation_id[]" value="{{ $item->id }}">
+                            </td>
+                            <td class="text-end fw-semibold text-secondary">
+                                {{ number_format($item->total_amount, 2) }}
+                            </td>
+                            <td class="text-end text-muted">
+                                {{ number_format($item->used_amount, 2) }}
+                            </td>
+                            
+                            {{-- งบคงเหลือ --}}
+                            <td class="text-end fw-bold {{ $remaining < 0 ? 'text-danger' : 'text-success' }}">
+                                {{ number_format($remaining, 2) }}
+                            </td>
+                            
+                            <td>
+                                <div class="input-group input-group-sm shadow-sm">
+                                    <input type="text" 
+                                        class="form-control text-end fw-bold text-primary budget-input" 
+                                        value="{{ number_format($item->project_amount, 2) }}" 
+                                        data-max="{{ $item->remaining_amount }}" 
+                                        oninput="validateAndFormat(this)">
+                                    <span class="input-group-text bg-light text-muted">บ.</span>
+                                </div>
+                                <input type="hidden" name="amount[]" class="budget-hidden" value="{{ $item->project_amount }}">
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4 fst-italic">
+                                <i class="fa-solid fa-inbox fs-4 mb-2 d-block text-black-50"></i>ไม่พบข้อมูลงบประมาณที่ได้รับจัดสรรใน-ปีงบประมาณนี้
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
                 
-                <input type="number" class="form-control" name="amount[]" value="{{ $budget->allocated_amount }}" {!! $project->total_allocated_budget > 0 ? 'disabled':'' !!} step="0.01" required>
-                
-            </div>
-            <div class="col-md-1">
-                @if(!$project->total_allocated_budget > 0)
-                    <button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('.budget-row').remove()"><i class="fa-solid fa-trash"></i></button>
-                @endif
-            </div>
+                {{-- แถวสรุปยอดรวมท้ายตาราง --}}
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="5" class="text-end py-3 text-dark">รวมงบประมาณที่จัดสรรลงในโครงการนี้ทั้งสิ้น:</td>
+                        @php
+                            $totalProjectBudget = $project->projectBudgetSources->sum('allocated_amount');
+                        @endphp
+                        <td class="text-end py-3 text-primary fs-6">
+                            {{ number_format($totalProjectBudget, 2) }} <span class="small fw-normal text-muted">บาท</span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
-        @endforeach
     </div>
-    @if(!$project->total_allocated_budget > 0)
-        <button type="button" class="btn btn-outline-success btn-sm" onclick="addBudgetRow()">+ เพิ่มแหล่งเงิน</button>
-        <div class="text-end mt-3">
-            <button type="submit" class="btn btn-primary">บันทึกข้อมูลแหล่งเงิน</button>
-        </div>
-    @endif
-    <div class="row mt-3 p-2 bg-light rounded">
-        <div class="col-md-9 text-end fw-bold">ยอดเงินรวมทั้งหมด:</div>
-        <div class="col-md-2">
-            <input type="text" id="total-amount" class="form-control fw-bold text-primary" value="0.00" readonly>
-        </div>
-        <div class="col-md-1">บาท</div>
+
+    <div class="text-end mt-3">
+        <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm rounded-3">
+            <i class="fa-solid fa-save me-2"></i> บันทึกงบประมาณโครงการ
+        </button>
     </div>
 </form>
 
 @push('scripts')
 <script>
-    const masterData = {
-        programs: @json($programs),
-        categories: @json($budgetCategories)
-    };
-
-    // 1. ฟังก์ชันคำนวณยอดรวม
-    function calculateTotal() {
-        let total = 0;
-        $('input[name="amount[]"]').each(function() {
-            let val = parseFloat($(this).val());
-            if (!isNaN(val)) total += val;
-        });
-        $('#total-amount').val(total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-    }
-
-    calculateTotal();
-
-    // 2. เรียกใช้เมื่อมีการพิมพ์ค่าเงิน หรือ ลบแถว
-    $(document).on('input', 'input[name="amount[]"]', calculateTotal);
-    $(document).on('click', '.btn-danger', function() {
-        $(this).closest('.budget-row').remove();
-        calculateTotal();
-    });
-
-    function addBudgetRow() {
-        let rowId = 'row_' + Date.now();
-        let html = `
-        <div class="row g-2 mb-3 budget-row align-items-end border-bottom pb-3" id="${rowId}">
-            <div class="col-md-3">
-                <select class="form-select source-select" name="source_id[]" required>
-                    <option value="">-- เลือกแหล่งเงิน --</option>
-                    @foreach($budgetSources as $s)<option value="{{ $s->id }}">{{ $s->name }}</option>@endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select program-select" name="program_id[]" disabled>
-                    <option value="">-- แผนงาน --</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select category-select" name="category_id[]" disabled>
-                    <option value="">-- หมวดงบ --</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input type="number" class="form-control" name="amount[]" step="0.01" required>
-            </div>
-            <div class="col-md-1">
-                <button type="button" class="btn btn-danger btn-sm" onclick="$('#${rowId}').remove()"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        </div>`;
-        $('#budget-rows').append(html);
-    }
-
-    // กรองแผนงาน
-    $(document).on('change', '.source-select', function() {
-        let val = $(this).val();
-        let pSelect = $(this).closest('.budget-row').find('.program-select');
-        pSelect.prop('disabled', !val).empty().append('<option value="">-- แผนงาน --</option>');
-        masterData.programs.filter(p => p.budget_source_id == val).forEach(p => {
-            pSelect.append(`<option value="${p.id}">${p.name}</option>`);
-        });
-    });
-
-    // กรองหมวดงบ
-    $(document).on('change', '.program-select', function() {
-        let val = $(this).val();
-        let cSelect = $(this).closest('.budget-row').find('.category-select');
-        cSelect.prop('disabled', !val).empty().append('<option value="">-- หมวดงบ --</option>');
-        masterData.categories.filter(c => c.program_id == val).forEach(c => {
-            cSelect.append(`<option value="${c.id}">${c.name}</option>`);
-        });
-    });
-
-    // 🔥 ส่วนที่สำคัญ: การสั่ง Submit ฟอร์มด้วย AJAX
-    $('#projectBudgetForm').on('submit', function(e) {
-        e.preventDefault();
-
-            // ปลดล็อกตัวที่ disabled เพื่อให้ส่งค่า null ไปหา Controller
-        $(this).find('select').prop('disabled', false);
+    function validateAndFormat(input) {
+        let max = parseFloat($(input).data('max'));
+        let rawValue = input.value.replace(/,/g, '');
         
-        // ตรวจสอบข้อมูลก่อนส่ง (ถ้าเลือกแหล่งเงินแต่ไม่มีแผนงานย่อย ก็บันทึกได้)
-        let formData = $(this).serialize();
+        if (parseFloat(rawValue) > max) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'เกินงบประมาณ',
+                text: 'ยอดที่ระบุเกินกว่างบที่หน่วยงานได้รับ (สูงสุด: ' + max.toLocaleString() + ')',
+                timer: 2000
+            });
+            rawValue = max; 
+        }
 
-        $.ajax({
-            url: `{{ url('plan/projects') }}/${currentProjectId}/update-budget`,
-            type: 'POST',
-            data: formData,
-            success: function(res) {
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: res.message, 
-                    timer: 1500,
-                    showConfirmButton: false 
-                });
-                // ปลดล็อกแท็บกิจกรรม
-                $('#activities-tab').removeClass('disabled text-black-50 bg-light');
-            },
-            error: function(err) {
-                console.error(err);
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการบันทึก' });
-            }
-        });
+        $(input).closest('td').find('.budget-hidden').val(rawValue);
+
+        let parts = rawValue.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        input.value = parts.join('.');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'สำเร็จ',
+                text: "{{ session('success') }}",
+                timer: 2000,
+                showConfirmButton: false
+            });
+        @endif
+
+        @if($errors->any())
+            let errorList = '<ul class="text-start" style="list-style-type: none; padding-left: 0;">';
+            @foreach($errors->all() as $error)
+                errorList += '<li class="mb-1 text-danger"><i class="fa-solid fa-circle-exclamation me-2"></i>{{ $error }}</li>';
+            @endforeach
+            errorList += '</ul>';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'พบข้อผิดพลาด!',
+                html: errorList,
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#d33'
+            });
+        @endif
     });
 </script>
 @endpush
